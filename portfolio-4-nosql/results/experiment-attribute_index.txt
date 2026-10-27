@@ -1,0 +1,22 @@
+$ mongosh $MONGO_URI --quiet --file experiments/attribute_index.js
+A. category index alone
+   (planner)
+    plan         PROJECTION_DEFAULT <- FETCH <- IXSCAN(ix_categories_slug_status)
+    keysExamined 337  docsExamined 337  ms 4
+
+B. attribute index added
+   created try_attr_index
+   planner choice
+    plan         PROJECTION_DEFAULT <- FETCH <- IXSCAN(try_attr_index)
+    keysExamined 56  docsExamined 56  ms 10
+   forced: category index
+    plan         PROJECTION_DEFAULT <- FETCH <- IXSCAN(ix_categories_slug_status)
+    keysExamined 337  docsExamined 337  ms 2
+   forced: attribute index
+    plan         PROJECTION_DEFAULT <- FETCH <- IXSCAN(try_attr_index)
+    keysExamined 56  docsExamined 56  ms 1
+
+C. attribute index dropped - the plan is back to three indexes
+   Not adopted. It examines ~6x fewer documents, but it serves exactly one
+   filter shape (colour then capacity, in that order); faceted browsing needs
+   an index per facet or a search engine, which is out of scope here.

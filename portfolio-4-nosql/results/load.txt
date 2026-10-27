@@ -1,0 +1,6 @@
+documents        : 10,000
+embedded variants: 21,560
+avg document size: 676 bytes
+collection size  : 6.5 MiB on disk (uncompressed)
+indexes          : 1 (only _id at this point)
+loaded 10,000 products from C:\Users\davee\Documents\Qoder\2026-10-27\53ff2f01\advanced-database-portfolio\portfolio-1-database-design\seed-data

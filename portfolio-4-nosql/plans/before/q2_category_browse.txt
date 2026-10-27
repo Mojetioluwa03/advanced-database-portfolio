@@ -1,0 +1,51 @@
+$ mongosh $MONGO_URI --quiet --file queries/q2_category_browse.js
+Q2  category browse, price band, page 1
+    plan           PROJECTION_SIMPLE <- COLLSCAN
+    docsExamined   10000
+    keysExamined   0
+    cursorReturned 344
+    execMs         16, 15, 17  median 16
+    returned       20 document(s)
+{
+  _id: 4930,
+  name: 'Ember Nocturne Camera',
+  brand: {
+    brand_id: 15,
+    name: 'Ember'
+  },
+  categories: [
+    {
+      category_id: 4,
+      name: 'Audio',
+      slug: 'electronics-audio',
+      path: [
+        'Electronics',
+        'Audio'
+      ]
+    }
+  ],
+  from_price: Decimal128('21.73'),
+  buyable: 2
+}
+{
+  _id: 7609,
+  name: 'Hollow Trail Monitor',
+  brand: {
+    brand_id: 28,
+    name: 'Hollow'
+  },
+  categories: [
+    {
+      category_id: 4,
+      name: 'Audio',
+      slug: 'electronics-audio',
+      path: [
+        'Electronics',
+        'Audio'
+      ]
+    }
+  ],
+  from_price: Decimal128('23.55'),
+  buyable: 2
+}
+    ... 18 more

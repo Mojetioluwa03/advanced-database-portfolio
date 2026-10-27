@@ -1,0 +1,78 @@
+{
+  "_id": 624,
+  "name": "Verdant Coastal Earbuds",
+  "description": "Coastal earbuds from Verdant. Electronics range.",
+  "status": "active",
+  "created_at": {
+    "$date": "2023-05-03T14:59:52Z"
+  },
+  "brand": {
+    "brand_id": 4,
+    "name": "Verdant"
+  },
+  "categories": [
+    {
+      "category_id": 4,
+      "name": "Audio",
+      "slug": "electronics-audio",
+      "path": [
+        "Electronics",
+        "Audio"
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "variant_id": 1314,
+      "sku": "SKU-00624-1",
+      "price": {
+        "$numberDecimal": "552.58"
+      },
+      "weight_g": 2828,
+      "status": "active",
+      "attributes": {
+        "colour": "Green",
+        "capacity": "1TB"
+      }
+    },
+    {
+      "variant_id": 1315,
+      "sku": "SKU-00624-2",
+      "price": {
+        "$numberDecimal": "650.10"
+      },
+      "weight_g": 731,
+      "status": "discontinued",
+      "attributes": {
+        "colour": "Beige",
+        "capacity": "64GB"
+      }
+    },
+    {
+      "variant_id": 1316,
+      "sku": "SKU-00624-3",
+      "price": {
+        "$numberDecimal": "747.62"
+      },
+      "weight_g": 2423,
+      "status": "active",
+      "attributes": {
+        "colour": "Green",
+        "capacity": "256GB"
+      }
+    },
+    {
+      "variant_id": 1317,
+      "sku": "SKU-00624-4",
+      "price": {
+        "$numberDecimal": "845.13"
+      },
+      "weight_g": 843,
+      "status": "active",
+      "attributes": {
+        "colour": "Blue",
+        "capacity": "1TB"
+      }
+    }
+  ]
+}

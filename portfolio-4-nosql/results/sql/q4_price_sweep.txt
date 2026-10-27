@@ -1,0 +1,17 @@
+===== first 3 rows =====
+-[ RECORD 1 ]--+-------------------------------------------------------------------------------------------------------------------------
+product_id     | 3
+name           | Pique Premium Guidebook
+brand          | Pique
+cheap_variants | [{"sku": "SKU-00003-1", "price": 12.32}, {"sku": "SKU-00003-2", "price": 14.49}]
+-[ RECORD 2 ]--+-------------------------------------------------------------------------------------------------------------------------
+product_id     | 48
+name           | Drift Compact Guidebook
+brand          | Drift
+cheap_variants | [{"sku": "SKU-00048-1", "price": 10.58}, {"sku": "SKU-00048-2", "price": 12.45}, {"sku": "SKU-00048-3", "price": 14.32}]
+-[ RECORD 3 ]--+-------------------------------------------------------------------------------------------------------------------------
+product_id     | 169
+name           | Kestrel Aero Scarf
+brand          | Kestrel
+cheap_variants | [{"sku": "SKU-00169-1", "price": 18.16}]
+

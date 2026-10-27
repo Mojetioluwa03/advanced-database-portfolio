@@ -1,0 +1,132 @@
+===== run 1 =====
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2691.39..2691.41 rows=10 width=123) (actual time=22.573..22.576 rows=10 loops=1)
+   Buffers: shared hit=347
+   ->  Sort  (cost=2691.39..2691.49 rows=41 width=123) (actual time=22.571..22.573 rows=10 loops=1)
+         Sort Key: (count(DISTINCT p.product_id)) DESC, b.name
+         Sort Method: top-N heapsort  Memory: 27kB
+         Buffers: shared hit=347
+         ->  GroupAggregate  (cost=2349.23..2690.50 rows=41 width=123) (actual time=18.644..22.536 rows=41 loops=1)
+               Group Key: b.brand_id
+               Buffers: shared hit=341
+               ->  Sort  (cost=2349.23..2397.90 rows=19466 width=21) (actual time=18.521..19.192 rows=19489 loops=1)
+                     Sort Key: b.brand_id, p.product_id
+                     Sort Method: quicksort  Memory: 1704kB
+                     Buffers: shared hit=341
+                     ->  Hash Join  (cost=400.71..962.41 rows=19466 width=21) (actual time=2.818..10.060 rows=19489 loops=1)
+                           Hash Cond: (p.brand_id = b.brand_id)
+                           Buffers: shared hit=338
+                           ->  Hash Join  (cost=398.79..904.10 rows=19466 width=14) (actual time=2.794..7.934 rows=19489 loops=1)
+                                 Hash Cond: (v.product_id = p.product_id)
+                                 Buffers: shared hit=337
+                                 ->  Seq Scan on product_variant v  (cost=0.00..451.51 rows=20488 width=10) (actual time=0.010..2.556 rows=20488 loops=1)
+                                       Filter: ((status)::text = 'active'::text)
+                                       Rows Removed by Filter: 1073
+                                       Buffers: shared hit=182
+                                 ->  Hash  (cost=280.01..280.01 rows=9502 width=8) (actual time=2.740..2.740 rows=9502 loops=1)
+                                       Buckets: 16384  Batches: 1  Memory Usage: 500kB
+                                       Buffers: shared hit=155
+                                       ->  Seq Scan on product p  (cost=0.00..280.01 rows=9502 width=8) (actual time=0.005..1.788 rows=9502 loops=1)
+                                             Filter: ((status)::text = 'active'::text)
+                                             Rows Removed by Filter: 499
+                                             Buffers: shared hit=155
+                           ->  Hash  (cost=1.41..1.41 rows=41 width=11) (actual time=0.017..0.017 rows=41 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on brand b  (cost=0.00..1.41 rows=41 width=11) (actual time=0.006..0.009 rows=41 loops=1)
+                                       Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=218
+ Planning Time: 3.970 ms
+ Execution Time: 22.823 ms
+(39 rows)
+
+===== run 2 =====
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2691.39..2691.41 rows=10 width=123) (actual time=21.211..21.216 rows=10 loops=1)
+   Buffers: shared hit=338
+   ->  Sort  (cost=2691.39..2691.49 rows=41 width=123) (actual time=21.210..21.213 rows=10 loops=1)
+         Sort Key: (count(DISTINCT p.product_id)) DESC, b.name
+         Sort Method: top-N heapsort  Memory: 27kB
+         Buffers: shared hit=338
+         ->  GroupAggregate  (cost=2349.23..2690.50 rows=41 width=123) (actual time=17.154..21.192 rows=41 loops=1)
+               Group Key: b.brand_id
+               Buffers: shared hit=338
+               ->  Sort  (cost=2349.23..2397.90 rows=19466 width=21) (actual time=17.050..17.793 rows=19489 loops=1)
+                     Sort Key: b.brand_id, p.product_id
+                     Sort Method: quicksort  Memory: 1704kB
+                     Buffers: shared hit=338
+                     ->  Hash Join  (cost=400.71..962.41 rows=19466 width=21) (actual time=1.929..8.773 rows=19489 loops=1)
+                           Hash Cond: (p.brand_id = b.brand_id)
+                           Buffers: shared hit=338
+                           ->  Hash Join  (cost=398.79..904.10 rows=19466 width=14) (actual time=1.909..6.659 rows=19489 loops=1)
+                                 Hash Cond: (v.product_id = p.product_id)
+                                 Buffers: shared hit=337
+                                 ->  Seq Scan on product_variant v  (cost=0.00..451.51 rows=20488 width=10) (actual time=0.003..2.143 rows=20488 loops=1)
+                                       Filter: ((status)::text = 'active'::text)
+                                       Rows Removed by Filter: 1073
+                                       Buffers: shared hit=182
+                                 ->  Hash  (cost=280.01..280.01 rows=9502 width=8) (actual time=1.860..1.861 rows=9502 loops=1)
+                                       Buckets: 16384  Batches: 1  Memory Usage: 500kB
+                                       Buffers: shared hit=155
+                                       ->  Seq Scan on product p  (cost=0.00..280.01 rows=9502 width=8) (actual time=0.003..1.125 rows=9502 loops=1)
+                                             Filter: ((status)::text = 'active'::text)
+                                             Rows Removed by Filter: 499
+                                             Buffers: shared hit=155
+                           ->  Hash  (cost=1.41..1.41 rows=41 width=11) (actual time=0.015..0.015 rows=41 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on brand b  (cost=0.00..1.41 rows=41 width=11) (actual time=0.005..0.007 rows=41 loops=1)
+                                       Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=10
+ Planning Time: 0.199 ms
+ Execution Time: 21.492 ms
+(39 rows)
+
+===== run 3 =====
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2691.39..2691.41 rows=10 width=123) (actual time=21.948..21.956 rows=10 loops=1)
+   Buffers: shared hit=338
+   ->  Sort  (cost=2691.39..2691.49 rows=41 width=123) (actual time=21.947..21.954 rows=10 loops=1)
+         Sort Key: (count(DISTINCT p.product_id)) DESC, b.name
+         Sort Method: top-N heapsort  Memory: 27kB
+         Buffers: shared hit=338
+         ->  GroupAggregate  (cost=2349.23..2690.50 rows=41 width=123) (actual time=16.806..21.921 rows=41 loops=1)
+               Group Key: b.brand_id
+               Buffers: shared hit=338
+               ->  Sort  (cost=2349.23..2397.90 rows=19466 width=21) (actual time=16.695..17.633 rows=19489 loops=1)
+                     Sort Key: b.brand_id, p.product_id
+                     Sort Method: quicksort  Memory: 1704kB
+                     Buffers: shared hit=338
+                     ->  Hash Join  (cost=400.71..962.41 rows=19466 width=21) (actual time=1.705..8.326 rows=19489 loops=1)
+                           Hash Cond: (p.brand_id = b.brand_id)
+                           Buffers: shared hit=338
+                           ->  Hash Join  (cost=398.79..904.10 rows=19466 width=14) (actual time=1.687..6.250 rows=19489 loops=1)
+                                 Hash Cond: (v.product_id = p.product_id)
+                                 Buffers: shared hit=337
+                                 ->  Seq Scan on product_variant v  (cost=0.00..451.51 rows=20488 width=10) (actual time=0.004..2.081 rows=20488 loops=1)
+                                       Filter: ((status)::text = 'active'::text)
+                                       Rows Removed by Filter: 1073
+                                       Buffers: shared hit=182
+                                 ->  Hash  (cost=280.01..280.01 rows=9502 width=8) (actual time=1.639..1.640 rows=9502 loops=1)
+                                       Buckets: 16384  Batches: 1  Memory Usage: 500kB
+                                       Buffers: shared hit=155
+                                       ->  Seq Scan on product p  (cost=0.00..280.01 rows=9502 width=8) (actual time=0.003..1.010 rows=9502 loops=1)
+                                             Filter: ((status)::text = 'active'::text)
+                                             Rows Removed by Filter: 499
+                                             Buffers: shared hit=155
+                           ->  Hash  (cost=1.41..1.41 rows=41 width=11) (actual time=0.011..0.014 rows=41 loops=1)
+                                 Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on brand b  (cost=0.00..1.41 rows=41 width=11) (actual time=0.005..0.007 rows=41 loops=1)
+                                       Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=10
+ Planning Time: 0.221 ms
+ Execution Time: 22.224 ms
+(39 rows)
+

@@ -1,0 +1,6 @@
+query,run1_ms,run2_ms,run3_ms,median_ms,rows,shared_pages
+q1_product_page,2.586,1.194,1.250,1.250,1,216
+q2_category_browse,5.257,4.101,4.553,4.553,20,1338
+q3_variant_filter,16.673,14.257,13.249,14.257,11,4005
+q4_price_sweep,6.857,5.093,4.979,5.093,199,449
+q5_brand_aggregation,22.823,21.492,22.224,22.224,10,347

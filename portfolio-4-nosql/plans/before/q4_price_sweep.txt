@@ -1,0 +1,84 @@
+$ mongosh $MONGO_URI --quiet --file queries/q4_price_sweep.js
+Q4  clearance sweep under GBP 20
+    plan           PROJECTION_DEFAULT <- COLLSCAN
+    docsExamined   10000
+    keysExamined   0
+    cursorReturned 199
+    execMs         33, 29, 28  median 29
+    returned       199 document(s)
+{
+  _id: 3,
+  name: 'Pique Premium Guidebook',
+  brand: {
+    brand_id: 24,
+    name: 'Pique'
+  },
+  cheap_variants: [
+    {
+      variant_id: 4,
+      sku: 'SKU-00003-1',
+      price: Decimal128('12.32'),
+      weight_g: 394,
+      status: 'active',
+      attributes: {
+        colour: 'Black',
+        size: 'XXL'
+      }
+    },
+    {
+      variant_id: 5,
+      sku: 'SKU-00003-2',
+      price: Decimal128('14.49'),
+      weight_g: 3503,
+      status: 'active',
+      attributes: {
+        colour: 'Red',
+        size: 'XL'
+      }
+    }
+  ]
+}
+{
+  _id: 48,
+  name: 'Drift Compact Guidebook',
+  brand: {
+    brand_id: 27,
+    name: 'Drift'
+  },
+  cheap_variants: [
+    {
+      variant_id: 100,
+      sku: 'SKU-00048-1',
+      price: Decimal128('10.58'),
+      weight_g: 235,
+      status: 'active',
+      attributes: {
+        colour: 'Burgundy',
+        size: 'XXL'
+      }
+    },
+    {
+      variant_id: 101,
+      sku: 'SKU-00048-2',
+      price: Decimal128('12.45'),
+      weight_g: 1302,
+      status: 'active',
+      attributes: {
+        colour: 'Burgundy',
+        size: 'XS'
+      }
+    },
+    {
+      variant_id: 102,
+      sku: 'SKU-00048-3',
+      price: Decimal128('14.32'),
+      weight_g: 442,
+      status: 'active',
+      attributes: {
+        colour: 'Grey',
+        size: 'XS'
+      }
+    }
+  ]
+}
+    ... 197 more

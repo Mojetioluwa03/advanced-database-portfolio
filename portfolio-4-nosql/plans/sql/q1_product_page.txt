@@ -1,0 +1,264 @@
+===== run 1 =====
+                                                                                                  QUERY PLAN                                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=1.00..488.51 rows=1 width=32) (actual time=2.402..2.418 rows=1 loops=1)
+   Buffers: shared hit=216
+   ->  Nested Loop  (cost=0.86..16.94 rows=1 width=83) (actual time=0.044..0.050 rows=1 loops=1)
+         Join Filter: (p_1.product_id = v.product_id)
+         Buffers: shared hit=9
+         ->  Nested Loop  (cost=0.57..16.61 rows=1 width=87) (actual time=0.037..0.041 rows=1 loops=1)
+               Buffers: shared hit=6
+               ->  Index Scan using uq_variant_sku on product_variant v  (cost=0.29..8.30 rows=1 width=4) (actual time=0.023..0.026 rows=1 loops=1)
+                     Index Cond: ((sku)::text = 'SKU-00624-1'::text)
+                     Buffers: shared hit=3
+               ->  Index Scan using product_pkey on product p  (cost=0.29..8.30 rows=1 width=83) (actual time=0.009..0.010 rows=1 loops=1)
+                     Index Cond: (product_id = v.product_id)
+                     Buffers: shared hit=3
+         ->  Index Only Scan using product_pkey on product p_1  (cost=0.29..0.32 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+               Index Cond: (product_id = p.product_id)
+               Heap Fetches: 0
+               Buffers: shared hit=3
+   ->  Index Scan using brand_pkey on brand b  (cost=0.14..0.16 rows=1 width=11) (actual time=0.009..0.009 rows=1 loops=1)
+         Index Cond: (brand_id = p.brand_id)
+         Buffers: shared hit=2
+   SubPlan 1
+     ->  Aggregate  (cost=6.33..6.34 rows=1 width=32) (actual time=0.143..0.147 rows=1 loops=1)
+           Buffers: shared hit=9
+           ->  Sort  (cost=6.31..6.32 rows=1 width=39) (actual time=0.123..0.127 rows=1 loops=1)
+                 Sort Key: c.category_id
+                 Sort Method: quicksort  Memory: 25kB
+                 Buffers: shared hit=9
+                 ->  Nested Loop Left Join  (cost=4.46..6.30 rows=1 width=39) (actual time=0.096..0.103 rows=1 loops=1)
+                       Buffers: shared hit=6
+                       ->  Hash Join  (cost=4.32..5.83 rows=1 width=34) (actual time=0.090..0.096 rows=1 loops=1)
+                             Hash Cond: (c.category_id = pc.category_id)
+                             Buffers: shared hit=4
+                             ->  Seq Scan on category c  (cost=0.00..1.40 rows=40 width=34) (actual time=0.009..0.011 rows=40 loops=1)
+                                   Buffers: shared hit=1
+                             ->  Hash  (cost=4.30..4.30 rows=1 width=4) (actual time=0.072..0.073 rows=1 loops=1)
+                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                   Buffers: shared hit=3
+                                   ->  Index Only Scan using product_category_pkey on product_category pc  (cost=0.29..4.30 rows=1 width=4) (actual time=0.065..0.066 rows=1 loops=1)
+                                         Index Cond: (product_id = p.product_id)
+                                         Heap Fetches: 0
+                                         Buffers: shared hit=3
+                       ->  Index Scan using category_pkey on category root  (cost=0.14..0.46 rows=1 width=13) (actual time=0.004..0.005 rows=1 loops=1)
+                             Index Cond: (category_id = c.parent_category_id)
+                             Buffers: shared hit=2
+   SubPlan 2
+     ->  Aggregate  (cost=465.06..465.07 rows=1 width=32) (actual time=2.154..2.158 rows=1 loops=1)
+           Buffers: shared hit=196
+           ->  Sort  (cost=465.04..465.04 rows=2 width=65) (actual time=2.066..2.070 rows=4 loops=1)
+                 Sort Key: v_1.variant_id
+                 Sort Method: quicksort  Memory: 25kB
+                 Buffers: shared hit=196
+                 ->  Nested Loop Left Join  (cost=6.74..465.03 rows=2 width=65) (actual time=0.212..2.056 rows=4 loops=1)
+                       Buffers: shared hit=196
+                       ->  Seq Scan on product_variant v_1  (cost=0.00..451.51 rows=2 width=33) (actual time=0.111..1.884 rows=4 loops=1)
+                             Filter: (product_id = p.product_id)
+                             Rows Removed by Filter: 21557
+                             Buffers: shared hit=182
+                       ->  Aggregate  (cost=6.74..6.75 rows=1 width=32) (actual time=0.041..0.042 rows=1 loops=4)
+                             Buffers: shared hit=14
+                             ->  Nested Loop  (cost=4.35..6.73 rows=2 width=11) (actual time=0.036..0.039 rows=2 loops=4)
+                                   Join Filter: (av.attribute_id = a.attribute_id)
+                                   Rows Removed by Join Filter: 2
+                                   Buffers: shared hit=14
+                                   ->  Hash Join  (cost=4.35..5.63 rows=2 width=8) (actual time=0.032..0.034 rows=2 loops=4)
+                                         Hash Cond: (av.value_id = x.value_id)
+                                         Buffers: shared hit=13
+                                         ->  Seq Scan on attribute_value av  (cost=0.00..1.21 rows=21 width=12) (actual time=0.011..0.012 rows=21 loops=4)
+                                               Buffers: shared hit=4
+                                         ->  Hash  (cost=4.32..4.32 rows=2 width=4) (actual time=0.018..0.018 rows=2 loops=4)
+                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                               Buffers: shared hit=9
+                                               ->  Index Only Scan using variant_attribute_value_pkey on variant_attribute_value x  (cost=0.29..4.32 rows=2 width=4) (actual time=0.016..0.016 rows=2 loops=4)
+                                                     Index Cond: (variant_id = v_1.variant_id)
+                                                     Heap Fetches: 0
+                                                     Buffers: shared hit=9
+                                   ->  Materialize  (cost=0.00..1.04 rows=3 width=11) (actual time=0.001..0.001 rows=2 loops=8)
+                                         Buffers: shared hit=1
+                                         ->  Seq Scan on attribute a  (cost=0.00..1.03 rows=3 width=11) (actual time=0.006..0.006 rows=3 loops=1)
+                                               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=472
+ Planning Time: 9.664 ms
+ Execution Time: 2.586 ms
+(83 rows)
+
+===== run 2 =====
+                                                                                                  QUERY PLAN                                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=1.00..488.51 rows=1 width=32) (actual time=1.100..1.107 rows=1 loops=1)
+   Buffers: shared hit=213
+   ->  Nested Loop  (cost=0.86..16.94 rows=1 width=83) (actual time=0.020..0.022 rows=1 loops=1)
+         Join Filter: (p_1.product_id = v.product_id)
+         Buffers: shared hit=9
+         ->  Nested Loop  (cost=0.57..16.61 rows=1 width=87) (actual time=0.015..0.017 rows=1 loops=1)
+               Buffers: shared hit=6
+               ->  Index Scan using uq_variant_sku on product_variant v  (cost=0.29..8.30 rows=1 width=4) (actual time=0.009..0.009 rows=1 loops=1)
+                     Index Cond: ((sku)::text = 'SKU-00624-1'::text)
+                     Buffers: shared hit=3
+               ->  Index Scan using product_pkey on product p  (cost=0.29..8.30 rows=1 width=83) (actual time=0.005..0.005 rows=1 loops=1)
+                     Index Cond: (product_id = v.product_id)
+                     Buffers: shared hit=3
+         ->  Index Only Scan using product_pkey on product p_1  (cost=0.29..0.32 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+               Index Cond: (product_id = p.product_id)
+               Heap Fetches: 0
+               Buffers: shared hit=3
+   ->  Index Scan using brand_pkey on brand b  (cost=0.14..0.16 rows=1 width=11) (actual time=0.003..0.004 rows=1 loops=1)
+         Index Cond: (brand_id = p.brand_id)
+         Buffers: shared hit=2
+   SubPlan 1
+     ->  Aggregate  (cost=6.33..6.34 rows=1 width=32) (actual time=0.041..0.043 rows=1 loops=1)
+           Buffers: shared hit=6
+           ->  Sort  (cost=6.31..6.32 rows=1 width=39) (actual time=0.031..0.033 rows=1 loops=1)
+                 Sort Key: c.category_id
+                 Sort Method: quicksort  Memory: 25kB
+                 Buffers: shared hit=6
+                 ->  Nested Loop Left Join  (cost=4.46..6.30 rows=1 width=39) (actual time=0.024..0.029 rows=1 loops=1)
+                       Buffers: shared hit=6
+                       ->  Hash Join  (cost=4.32..5.83 rows=1 width=34) (actual time=0.021..0.025 rows=1 loops=1)
+                             Hash Cond: (c.category_id = pc.category_id)
+                             Buffers: shared hit=4
+                             ->  Seq Scan on category c  (cost=0.00..1.40 rows=40 width=34) (actual time=0.005..0.006 rows=40 loops=1)
+                                   Buffers: shared hit=1
+                             ->  Hash  (cost=4.30..4.30 rows=1 width=4) (actual time=0.008..0.009 rows=1 loops=1)
+                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                   Buffers: shared hit=3
+                                   ->  Index Only Scan using product_category_pkey on product_category pc  (cost=0.29..4.30 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                                         Index Cond: (product_id = p.product_id)
+                                         Heap Fetches: 0
+                                         Buffers: shared hit=3
+                       ->  Index Scan using category_pkey on category root  (cost=0.14..0.46 rows=1 width=13) (actual time=0.002..0.003 rows=1 loops=1)
+                             Index Cond: (category_id = c.parent_category_id)
+                             Buffers: shared hit=2
+   SubPlan 2
+     ->  Aggregate  (cost=465.06..465.07 rows=1 width=32) (actual time=1.018..1.020 rows=1 loops=1)
+           Buffers: shared hit=196
+           ->  Sort  (cost=465.04..465.04 rows=2 width=65) (actual time=0.991..0.993 rows=4 loops=1)
+                 Sort Key: v_1.variant_id
+                 Sort Method: quicksort  Memory: 25kB
+                 Buffers: shared hit=196
+                 ->  Nested Loop Left Join  (cost=6.74..465.03 rows=2 width=65) (actual time=0.091..0.989 rows=4 loops=1)
+                       Buffers: shared hit=196
+                       ->  Seq Scan on product_variant v_1  (cost=0.00..451.51 rows=2 width=33) (actual time=0.060..0.931 rows=4 loops=1)
+                             Filter: (product_id = p.product_id)
+                             Rows Removed by Filter: 21557
+                             Buffers: shared hit=182
+                       ->  Aggregate  (cost=6.74..6.75 rows=1 width=32) (actual time=0.013..0.014 rows=1 loops=4)
+                             Buffers: shared hit=14
+                             ->  Nested Loop  (cost=4.35..6.73 rows=2 width=11) (actual time=0.009..0.012 rows=2 loops=4)
+                                   Join Filter: (av.attribute_id = a.attribute_id)
+                                   Rows Removed by Join Filter: 2
+                                   Buffers: shared hit=14
+                                   ->  Hash Join  (cost=4.35..5.63 rows=2 width=8) (actual time=0.006..0.008 rows=2 loops=4)
+                                         Hash Cond: (av.value_id = x.value_id)
+                                         Buffers: shared hit=13
+                                         ->  Seq Scan on attribute_value av  (cost=0.00..1.21 rows=21 width=12) (actual time=0.001..0.001 rows=21 loops=4)
+                                               Buffers: shared hit=4
+                                         ->  Hash  (cost=4.32..4.32 rows=2 width=4) (actual time=0.003..0.003 rows=2 loops=4)
+                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                               Buffers: shared hit=9
+                                               ->  Index Only Scan using variant_attribute_value_pkey on variant_attribute_value x  (cost=0.29..4.32 rows=2 width=4) (actual time=0.002..0.002 rows=2 loops=4)
+                                                     Index Cond: (variant_id = v_1.variant_id)
+                                                     Heap Fetches: 0
+                                                     Buffers: shared hit=9
+                                   ->  Materialize  (cost=0.00..1.04 rows=3 width=11) (actual time=0.001..0.001 rows=2 loops=8)
+                                         Buffers: shared hit=1
+                                         ->  Seq Scan on attribute a  (cost=0.00..1.03 rows=3 width=11) (actual time=0.003..0.003 rows=3 loops=1)
+                                               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=42
+ Planning Time: 0.544 ms
+ Execution Time: 1.194 ms
+(83 rows)
+
+===== run 3 =====
+                                                                                                  QUERY PLAN                                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=1.00..488.51 rows=1 width=32) (actual time=1.159..1.166 rows=1 loops=1)
+   Buffers: shared hit=213
+   ->  Nested Loop  (cost=0.86..16.94 rows=1 width=83) (actual time=0.017..0.018 rows=1 loops=1)
+         Join Filter: (p_1.product_id = v.product_id)
+         Buffers: shared hit=9
+         ->  Nested Loop  (cost=0.57..16.61 rows=1 width=87) (actual time=0.013..0.014 rows=1 loops=1)
+               Buffers: shared hit=6
+               ->  Index Scan using uq_variant_sku on product_variant v  (cost=0.29..8.30 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+                     Index Cond: ((sku)::text = 'SKU-00624-1'::text)
+                     Buffers: shared hit=3
+               ->  Index Scan using product_pkey on product p  (cost=0.29..8.30 rows=1 width=83) (actual time=0.004..0.004 rows=1 loops=1)
+                     Index Cond: (product_id = v.product_id)
+                     Buffers: shared hit=3
+         ->  Index Only Scan using product_pkey on product p_1  (cost=0.29..0.32 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+               Index Cond: (product_id = p.product_id)
+               Heap Fetches: 0
+               Buffers: shared hit=3
+   ->  Index Scan using brand_pkey on brand b  (cost=0.14..0.16 rows=1 width=11) (actual time=0.003..0.003 rows=1 loops=1)
+         Index Cond: (brand_id = p.brand_id)
+         Buffers: shared hit=2
+   SubPlan 1
+     ->  Aggregate  (cost=6.33..6.34 rows=1 width=32) (actual time=0.038..0.040 rows=1 loops=1)
+           Buffers: shared hit=6
+           ->  Sort  (cost=6.31..6.32 rows=1 width=39) (actual time=0.029..0.030 rows=1 loops=1)
+                 Sort Key: c.category_id
+                 Sort Method: quicksort  Memory: 25kB
+                 Buffers: shared hit=6
+                 ->  Nested Loop Left Join  (cost=4.46..6.30 rows=1 width=39) (actual time=0.021..0.026 rows=1 loops=1)
+                       Buffers: shared hit=6
+                       ->  Hash Join  (cost=4.32..5.83 rows=1 width=34) (actual time=0.018..0.022 rows=1 loops=1)
+                             Hash Cond: (c.category_id = pc.category_id)
+                             Buffers: shared hit=4
+                             ->  Seq Scan on category c  (cost=0.00..1.40 rows=40 width=34) (actual time=0.004..0.006 rows=40 loops=1)
+                                   Buffers: shared hit=1
+                             ->  Hash  (cost=4.30..4.30 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+                                   Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                   Buffers: shared hit=3
+                                   ->  Index Only Scan using product_category_pkey on product_category pc  (cost=0.29..4.30 rows=1 width=4) (actual time=0.005..0.005 rows=1 loops=1)
+                                         Index Cond: (product_id = p.product_id)
+                                         Heap Fetches: 0
+                                         Buffers: shared hit=3
+                       ->  Index Scan using category_pkey on category root  (cost=0.14..0.46 rows=1 width=13) (actual time=0.003..0.003 rows=1 loops=1)
+                             Index Cond: (category_id = c.parent_category_id)
+                             Buffers: shared hit=2
+   SubPlan 2
+     ->  Aggregate  (cost=465.06..465.07 rows=1 width=32) (actual time=1.084..1.086 rows=1 loops=1)
+           Buffers: shared hit=196
+           ->  Sort  (cost=465.04..465.04 rows=2 width=65) (actual time=1.057..1.059 rows=4 loops=1)
+                 Sort Key: v_1.variant_id
+                 Sort Method: quicksort  Memory: 25kB
+                 Buffers: shared hit=196
+                 ->  Nested Loop Left Join  (cost=6.74..465.03 rows=2 width=65) (actual time=0.096..1.056 rows=4 loops=1)
+                       Buffers: shared hit=196
+                       ->  Seq Scan on product_variant v_1  (cost=0.00..451.51 rows=2 width=33) (actual time=0.068..1.000 rows=4 loops=1)
+                             Filter: (product_id = p.product_id)
+                             Rows Removed by Filter: 21557
+                             Buffers: shared hit=182
+                       ->  Aggregate  (cost=6.74..6.75 rows=1 width=32) (actual time=0.013..0.013 rows=1 loops=4)
+                             Buffers: shared hit=14
+                             ->  Nested Loop  (cost=4.35..6.73 rows=2 width=11) (actual time=0.009..0.011 rows=2 loops=4)
+                                   Join Filter: (av.attribute_id = a.attribute_id)
+                                   Rows Removed by Join Filter: 2
+                                   Buffers: shared hit=14
+                                   ->  Hash Join  (cost=4.35..5.63 rows=2 width=8) (actual time=0.006..0.008 rows=2 loops=4)
+                                         Hash Cond: (av.value_id = x.value_id)
+                                         Buffers: shared hit=13
+                                         ->  Seq Scan on attribute_value av  (cost=0.00..1.21 rows=21 width=12) (actual time=0.001..0.001 rows=21 loops=4)
+                                               Buffers: shared hit=4
+                                         ->  Hash  (cost=4.32..4.32 rows=2 width=4) (actual time=0.003..0.003 rows=2 loops=4)
+                                               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                               Buffers: shared hit=9
+                                               ->  Index Only Scan using variant_attribute_value_pkey on variant_attribute_value x  (cost=0.29..4.32 rows=2 width=4) (actual time=0.002..0.002 rows=2 loops=4)
+                                                     Index Cond: (variant_id = v_1.variant_id)
+                                                     Heap Fetches: 0
+                                                     Buffers: shared hit=9
+                                   ->  Materialize  (cost=0.00..1.04 rows=3 width=11) (actual time=0.001..0.001 rows=2 loops=8)
+                                         Buffers: shared hit=1
+                                         ->  Seq Scan on attribute a  (cost=0.00..1.03 rows=3 width=11) (actual time=0.002..0.002 rows=3 loops=1)
+                                               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=42
+ Planning Time: 0.486 ms
+ Execution Time: 1.250 ms
+(83 rows)
+

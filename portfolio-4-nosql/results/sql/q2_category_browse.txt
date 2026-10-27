@@ -1,0 +1,23 @@
+===== first 3 rows =====
+-[ RECORD 1 ]------------------------------------------------------------------
+product_id | 4930
+name       | Ember Nocturne Camera
+brand      | Ember
+from_price | 21.73
+buyable    | 2
+categories | [{"name": "Audio", "slug": "electronics-audio", "category_id": 4}]
+-[ RECORD 2 ]------------------------------------------------------------------
+product_id | 7609
+name       | Hollow Trail Monitor
+brand      | Hollow
+from_price | 23.55
+buyable    | 2
+categories | [{"name": "Audio", "slug": "electronics-audio", "category_id": 4}]
+-[ RECORD 3 ]------------------------------------------------------------------
+product_id | 4906
+name       | Basalt Vintage Laptop
+brand      | Basalt
+from_price | 24.01
+buyable    | 2
+categories | [{"name": "Audio", "slug": "electronics-audio", "category_id": 4}]
+

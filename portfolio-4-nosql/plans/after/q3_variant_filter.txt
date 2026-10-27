@@ -1,0 +1,51 @@
+$ mongosh $MONGO_URI --quiet --file queries/q3_variant_filter.js
+Q3  attribute filter, same variant
+    plan           PROJECTION_DEFAULT <- FETCH <- IXSCAN(ix_categories_slug_status)
+    docsExamined   337
+    keysExamined   337
+    cursorReturned 11
+    execMs         3, 4, 3  median 3
+    returned       11 document(s)
+{
+  _id: 5982,
+  name: 'Ivory Compact Headphones',
+  brand: {
+    brand_id: 29,
+    name: 'Ivory'
+  },
+  matched_variants: [
+    {
+      variant_id: 12934,
+      sku: 'SKU-05982-3',
+      price: Decimal128('293.36'),
+      weight_g: 3871,
+      status: 'active',
+      attributes: {
+        colour: 'Black',
+        capacity: '256GB'
+      }
+    }
+  ]
+}
+{
+  _id: 8447,
+  name: 'Ivory Vintage Laptop',
+  brand: {
+    brand_id: 29,
+    name: 'Ivory'
+  },
+  matched_variants: [
+    {
+      variant_id: 18200,
+      sku: 'SKU-08447-4',
+      price: Decimal128('517.37'),
+      weight_g: 2932,
+      status: 'active',
+      attributes: {
+        colour: 'Black',
+        capacity: '256GB'
+      }
+    }
+  ]
+}
+    ... 9 more

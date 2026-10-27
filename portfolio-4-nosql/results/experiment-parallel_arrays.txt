@@ -1,0 +1,11 @@
+$ mongosh $MONGO_URI --quiet --file experiments/parallel_arrays.js
+cross-array compound index (category + variant price):
+REJECTED  {"categories.slug":1,"variants.price":1}
+          cannot index parallel arrays [variants] [categories]
+
+same-array compound index (variant weight + variant price):
+ACCEPTED  {"variants.weight_g":1,"variants.price":1}
+(ix_variants_status_price, built for Q4, is the same rule already in the
+ plan: both of its fields live inside variants[] too.)
+
+indexes remaining: _id_, uq_variants_sku, ix_categories_slug_status, ix_variants_status_price

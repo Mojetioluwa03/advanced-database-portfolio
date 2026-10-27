@@ -1,0 +1,26 @@
+===== first 3 rows =====
+-[ RECORD 1 ]------
+brand_id  | 8
+brand     | Halcyon
+products  | 261
+variants  | 565
+min_price | 5.44
+max_price | 1260.71
+avg_price | 481.73
+-[ RECORD 2 ]------
+brand_id  | 25
+brand     | Fathom
+products  | 253
+variants  | 504
+min_price | 6.29
+max_price | 1252.85
+avg_price | 481.47
+-[ RECORD 3 ]------
+brand_id  | 6
+brand     | Kestrel
+products  | 251
+variants  | 528
+min_price | 5.54
+max_price | 1233.49
+avg_price | 507.84
+

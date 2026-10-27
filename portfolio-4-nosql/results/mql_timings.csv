@@ -1,0 +1,11 @@
+phase,query,plan,keysExamined,docsExamined,cursorReturned,returned,median_ms
+before,q1_product_page,"PROJECTION_DEFAULT <- COLLSCAN",0,10000,1,1,14
+before,q2_category_browse,"PROJECTION_SIMPLE <- COLLSCAN",0,10000,344,20,16
+before,q3_variant_filter,"PROJECTION_DEFAULT <- COLLSCAN",0,10000,11,11,15
+before,q4_price_sweep,"PROJECTION_DEFAULT <- COLLSCAN",0,10000,199,199,29
+before,q5_brand_aggregation,"PROJECTION_DEFAULT <- COLLSCAN",0,10000,9501,10,99
+after,q1_product_page,"PROJECTION_DEFAULT <- FETCH <- IXSCAN(uq_variants_sku)",1,1,1,1,0
+after,q2_category_browse,"PROJECTION_SIMPLE <- FETCH <- IXSCAN(ix_categories_slug_status)",344,344,344,20,4
+after,q3_variant_filter,"PROJECTION_DEFAULT <- FETCH <- IXSCAN(ix_categories_slug_status)",337,337,11,11,3
+after,q4_price_sweep,"PROJECTION_DEFAULT <- FETCH <- IXSCAN(ix_variants_status_price)",364,207,199,199,4
+after,q5_brand_aggregation,"PROJECTION_DEFAULT <- COLLSCAN",0,10000,9501,10,95

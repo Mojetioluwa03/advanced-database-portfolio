@@ -1,0 +1,13 @@
+$ mongosh $MONGO_URI --quiet --file experiments/q3_elem_match_trap.js
+two independent array conditions : 23 products
+one $elemMatch                   : 11 products
+documents the wrong form includes anyway: 12
+  _id 156  Ember Coastal Monitor
+      Black variants have capacity : 1TB
+      256GB variants have colour   : Green
+  _id 190  Verdant Essential Camera
+      Black variants have capacity : 1TB
+      256GB variants have colour   : Navy
+  _id 791  Tidewater Everyday Tablet
+      Black variants have capacity : 64GB
+      256GB variants have colour   : Beige

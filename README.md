@@ -77,7 +77,7 @@ advanced-database-portfolio/
 | 1 | Database Design and Modelling (7) | Complete | `portfolio-1-database-design/` |
 | 2 | Query Processing and Optimisation (7) | Complete | `portfolio-2-query-optimisation/` |
 | 3 | Transactions and Concurrency (7) | Complete | `portfolio-3-transactions-concurrency/` |
-| 4 | NoSQL and Advanced Data Models (7) | Not started | — |
+| 4 | NoSQL and Advanced Data Models (7) | Complete | `portfolio-4-nosql/` |
 | 5 | Distributed and Cloud Database Exercise (6) | Not started | — |
 | — | Final Documentation (6) | Not started | — |
 
@@ -88,8 +88,9 @@ captured. Commits are made progressively as each activity progresses.
 
 ## 4. Environment and reproduction
 
-Requires Python 3.9+ and PostgreSQL 15+; PostgreSQL 16.15 was used here. Docker is
-optional and only needed if you have no local server.
+Requires Python 3.9+ and PostgreSQL 15+; PostgreSQL 16.15 was used here. Portfolio 4
+additionally needs MongoDB 7+ and `pymongo`; MongoDB 9.0.4 and pymongo 4.19 were used.
+Docker is optional and only needed if you have no local server.
 
 ### Route A — local PostgreSQL
 
@@ -138,6 +139,30 @@ docker compose exec -T postgres psql -U shopstack -d shopstack < schema.sql
 `psql` rather than a generic SQL client — and from inside
 `portfolio-1-database-design`, because the CSV paths are relative.
 
+### Route D — local MongoDB, no admin rights
+
+Portfolio 4 needs a server, not a cloud account. MongoDB's Windows zip is portable in
+the same way as EDB's PostgreSQL binaries — no installer, no service, no elevation:
+
+```bash
+curl -L -o mongodb.zip https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-9.0.4.zip
+unzip -q mongodb.zip && mv mongodb-win32-x86_64-windows-9.0.4/bin .
+curl -L -o mongosh.zip https://downloads.mongodb.com/compass/mongosh-2.14.0-win32-x64.zip
+unzip -q mongosh.zip && cp mongosh-2.14.0-win32-x64/bin/* bin/     # the shell needs its DLL beside it
+
+mkdir -p .mongodata
+bin/mongod --dbpath .mongodata --port 27018 --bind_ip 127.0.0.1 --logpath .mongodata/mongod.log
+bin/mongosh "mongodb://127.0.0.1:27018/?directConnection=true" --eval 'db.runCommand({ping: 1})'
+```
+
+Then, from `portfolio-4-nosql`: `python load_catalogue.py` and `bash run_queries.sh`.
+
+Two traps worth recording here as well. The server zip is **943 MB** and serves at
+roughly 300–500 KB/s on a domestic connection — budget 30+ minutes, not 30 seconds.
+And `mongosh.exe` needs `mongosh_crypt_v1.dll` from the same `bin/` directory; copying
+only the executable works until an authentication call needs the DLL, which is a
+confusing failure to diagnose later.
+
 Measured on the reference machine: `schema.sql` under a second, `load.sql` 3m44s for
 1.35M rows (dominated by foreign-key checks), `checks.sql` 1.9s over the loaded data.
 
@@ -157,13 +182,14 @@ of the chosen NoSQL store for Portfolio 4. This portfolio complies as follows.
 | P1 Design and modelling | SQL — DDL, DML and verification | `schema.sql`, `load.sql`, `checks.sql` |
 | P2 Query and optimisation | SQL, run through psql | `queries.sql`, `indexes.sql`, captured `EXPLAIN (ANALYZE, BUFFERS)` output |
 | P3 Transactions | SQL, two concurrent psql sessions | `BEGIN`/`COMMIT`/`ROLLBACK`/`SAVEPOINT`, isolation levels, `SELECT … FOR UPDATE` |
-| P4 NoSQL | MongoDB query language (MQL) via the driver | `portfolio-4-nosql/` |
+| P4 NoSQL | MongoDB query language (MQL) — `find`, aggregation pipelines, `$elemMatch`, `$group` | `portfolio-4-nosql/queries/`, captured `explain("executionStats")` output |
 | P5 Distributed and cloud | SQL plus deployment configuration | `portfolio-5-distributed-cloud/` |
 
-`seed.py` is the one non-SQL component. It fabricates rows and stops: it runs no query
-that answers a graded question, produces no analysis and generates no execution plan,
-so it cannot substitute for the mandated SQL. Every claim about the database's
-behaviour is stated in SQL and reproducible from the scripts committed beside it.
+`seed.py` and `load_catalogue.py` are the two non-SQL components. Both fabricate data
+and stop: they run no query that answers a graded question, produce no analysis and
+generate no execution plan, so they cannot substitute for the mandated languages. Every
+claim about either database's behaviour is stated in SQL or MQL and reproducible from
+the scripts committed beside it.
 
 `load.sql` uses psql's `\copy`, a client-side meta-command rather than SQL itself, and
 it moves data only. All queries in Portfolios 2, 3 and 5 are plain SQL.

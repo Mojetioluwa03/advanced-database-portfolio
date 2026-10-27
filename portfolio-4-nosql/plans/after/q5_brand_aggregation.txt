@@ -1,0 +1,98 @@
+$ mongosh $MONGO_URI --quiet --file queries/q5_brand_aggregation.js
+Q5  brand league table
+    plan           PROJECTION_DEFAULT <- COLLSCAN
+    docsExamined   10000
+    keysExamined   0
+    cursorReturned 9501
+    execMs         104, 93, 95  median 95
+    returned       10 document(s)
+{
+  _id: 'Halcyon',
+  brand_id: 8,
+  variants: 565,
+  min_price: Decimal128('5.44'),
+  max_price: Decimal128('1260.71'),
+  avg_price: 481.73,
+  products: 261
+}
+{
+  _id: 'Fathom',
+  brand_id: 25,
+  variants: 504,
+  min_price: Decimal128('6.29'),
+  max_price: Decimal128('1252.85'),
+  avg_price: 481.47,
+  products: 253
+}
+{
+  _id: 'Kestrel',
+  brand_id: 6,
+  variants: 528,
+  min_price: Decimal128('5.54'),
+  max_price: Decimal128('1233.49'),
+  avg_price: 507.84,
+  products: 251
+}
+{
+  _id: 'Loom',
+  brand_id: 23,
+  variants: 502,
+  min_price: Decimal128('9.80'),
+  max_price: Decimal128('1223.27'),
+  avg_price: 503.52,
+  products: 250
+}
+{
+  _id: 'Ivory',
+  brand_id: 29,
+  variants: 518,
+  min_price: Decimal128('4.54'),
+  max_price: Decimal128('1263.98'),
+  avg_price: 481.54,
+  products: 249
+}
+{
+  _id: 'Parable',
+  brand_id: 36,
+  variants: 539,
+  min_price: Decimal128('4.25'),
+  max_price: Decimal128('1222.14'),
+  avg_price: 513.98,
+  products: 248
+}
+{
+  _id: 'Junction',
+  brand_id: 30,
+  variants: 496,
+  min_price: Decimal128('5.28'),
+  max_price: Decimal128('1223.86'),
+  avg_price: 477.54,
+  products: 241
+}
+{
+  _id: 'Meridian',
+  brand_id: 7,
+  variants: 499,
+  min_price: Decimal128('11.12'),
+  max_price: Decimal128('1191.49'),
+  avg_price: 524.7,
+  products: 241
+}
+{
+  _id: 'Nimbus',
+  brand_id: 34,
+  variants: 480,
+  min_price: Decimal128('9.23'),
+  max_price: Decimal128('1235.38'),
+  avg_price: 464.78,
+  products: 241
+}
+{
+  _id: 'Pique',
+  brand_id: 24,
+  variants: 487,
+  min_price: Decimal128('12.32'),
+  max_price: Decimal128('1090.00'),
+  avg_price: 486.26,
+  products: 241
+}

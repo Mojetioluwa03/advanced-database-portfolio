@@ -1,0 +1,132 @@
+===== run 1 =====
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=522.46..828.18 rows=200 width=65) (actual time=3.826..6.749 rows=199 loops=1)
+   Buffers: shared hit=449
+   ->  GroupAggregate  (cost=522.46..1040.65 rows=339 width=65) (actual time=3.824..6.738 rows=199 loops=1)
+         Group Key: p.product_id, b.name
+         Buffers: shared hit=449
+         ->  Incremental Sort  (cost=522.46..1033.03 rows=339 width=51) (actual time=3.774..6.087 rows=349 loops=1)
+               Sort Key: p.product_id, b.name, v.sku
+               Presorted Key: p.product_id
+               Full-sort Groups: 11  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+               Buffers: shared hit=449
+               ->  Nested Loop  (cost=520.99..1017.77 rows=339 width=51) (actual time=3.514..5.979 rows=349 loops=1)
+                     Buffers: shared hit=446
+                     ->  Merge Join  (cost=520.84..1002.78 rows=339 width=48) (actual time=3.493..5.821 rows=349 loops=1)
+                           Merge Cond: (p.product_id = v.product_id)
+                           Buffers: shared hit=366
+                           ->  Index Scan using product_pkey on product p  (cost=0.29..453.30 rows=9502 width=30) (actual time=0.009..1.907 rows=9502 loops=1)
+                                 Filter: ((status)::text = 'active'::text)
+                                 Rows Removed by Filter: 499
+                                 Buffers: shared hit=184
+                           ->  Sort  (cost=520.55..521.44 rows=357 width=22) (actual time=3.475..3.489 rows=364 loops=1)
+                                 Sort Key: v.product_id
+                                 Sort Method: quicksort  Memory: 42kB
+                                 Buffers: shared hit=182
+                                 ->  Seq Scan on product_variant v  (cost=0.00..505.41 rows=357 width=22) (actual time=0.019..3.397 rows=364 loops=1)
+                                       Filter: ((price < '20'::numeric) AND ((status)::text = 'active'::text))
+                                       Rows Removed by Filter: 21197
+                                       Buffers: shared hit=182
+                     ->  Memoize  (cost=0.15..0.17 rows=1 width=11) (actual time=0.000..0.000 rows=1 loops=349)
+                           Cache Key: p.brand_id
+                           Cache Mode: logical
+                           Hits: 309  Misses: 40  Evictions: 0  Overflows: 0  Memory Usage: 5kB
+                           Buffers: shared hit=80
+                           ->  Index Scan using brand_pkey on brand b  (cost=0.14..0.16 rows=1 width=11) (actual time=0.001..0.001 rows=1 loops=40)
+                                 Index Cond: (brand_id = p.brand_id)
+                                 Buffers: shared hit=80
+ Planning:
+   Buffers: shared hit=227
+ Planning Time: 5.544 ms
+ Execution Time: 6.857 ms
+(39 rows)
+
+===== run 2 =====
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=522.46..828.18 rows=200 width=65) (actual time=2.308..5.053 rows=199 loops=1)
+   Buffers: shared hit=446
+   ->  GroupAggregate  (cost=522.46..1040.65 rows=339 width=65) (actual time=2.307..5.040 rows=199 loops=1)
+         Group Key: p.product_id, b.name
+         Buffers: shared hit=446
+         ->  Incremental Sort  (cost=522.46..1033.03 rows=339 width=51) (actual time=2.293..4.383 rows=349 loops=1)
+               Sort Key: p.product_id, b.name, v.sku
+               Presorted Key: p.product_id
+               Full-sort Groups: 11  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+               Buffers: shared hit=446
+               ->  Nested Loop  (cost=520.99..1017.77 rows=339 width=51) (actual time=2.145..4.298 rows=349 loops=1)
+                     Buffers: shared hit=446
+                     ->  Merge Join  (cost=520.84..1002.78 rows=339 width=48) (actual time=2.136..4.143 rows=349 loops=1)
+                           Merge Cond: (p.product_id = v.product_id)
+                           Buffers: shared hit=366
+                           ->  Index Scan using product_pkey on product p  (cost=0.29..453.30 rows=9502 width=30) (actual time=0.006..1.561 rows=9502 loops=1)
+                                 Filter: ((status)::text = 'active'::text)
+                                 Rows Removed by Filter: 499
+                                 Buffers: shared hit=184
+                           ->  Sort  (cost=520.55..521.44 rows=357 width=22) (actual time=2.127..2.141 rows=364 loops=1)
+                                 Sort Key: v.product_id
+                                 Sort Method: quicksort  Memory: 42kB
+                                 Buffers: shared hit=182
+                                 ->  Seq Scan on product_variant v  (cost=0.00..505.41 rows=357 width=22) (actual time=0.006..2.080 rows=364 loops=1)
+                                       Filter: ((price < '20'::numeric) AND ((status)::text = 'active'::text))
+                                       Rows Removed by Filter: 21197
+                                       Buffers: shared hit=182
+                     ->  Memoize  (cost=0.15..0.17 rows=1 width=11) (actual time=0.000..0.000 rows=1 loops=349)
+                           Cache Key: p.brand_id
+                           Cache Mode: logical
+                           Hits: 309  Misses: 40  Evictions: 0  Overflows: 0  Memory Usage: 5kB
+                           Buffers: shared hit=80
+                           ->  Index Scan using brand_pkey on brand b  (cost=0.14..0.16 rows=1 width=11) (actual time=0.001..0.001 rows=1 loops=40)
+                                 Index Cond: (brand_id = p.brand_id)
+                                 Buffers: shared hit=80
+ Planning:
+   Buffers: shared hit=10
+ Planning Time: 0.249 ms
+ Execution Time: 5.093 ms
+(39 rows)
+
+===== run 3 =====
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=522.46..828.18 rows=200 width=65) (actual time=2.488..4.931 rows=199 loops=1)
+   Buffers: shared hit=446
+   ->  GroupAggregate  (cost=522.46..1040.65 rows=339 width=65) (actual time=2.487..4.921 rows=199 loops=1)
+         Group Key: p.product_id, b.name
+         Buffers: shared hit=446
+         ->  Incremental Sort  (cost=522.46..1033.03 rows=339 width=51) (actual time=2.470..4.332 rows=349 loops=1)
+               Sort Key: p.product_id, b.name, v.sku
+               Presorted Key: p.product_id
+               Full-sort Groups: 11  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+               Buffers: shared hit=446
+               ->  Nested Loop  (cost=520.99..1017.77 rows=339 width=51) (actual time=2.284..4.248 rows=349 loops=1)
+                     Buffers: shared hit=446
+                     ->  Merge Join  (cost=520.84..1002.78 rows=339 width=48) (actual time=2.263..4.101 rows=349 loops=1)
+                           Merge Cond: (p.product_id = v.product_id)
+                           Buffers: shared hit=366
+                           ->  Index Scan using product_pkey on product p  (cost=0.29..453.30 rows=9502 width=30) (actual time=0.009..1.436 rows=9502 loops=1)
+                                 Filter: ((status)::text = 'active'::text)
+                                 Rows Removed by Filter: 499
+                                 Buffers: shared hit=184
+                           ->  Sort  (cost=520.55..521.44 rows=357 width=22) (actual time=2.248..2.261 rows=364 loops=1)
+                                 Sort Key: v.product_id
+                                 Sort Method: quicksort  Memory: 42kB
+                                 Buffers: shared hit=182
+                                 ->  Seq Scan on product_variant v  (cost=0.00..505.41 rows=357 width=22) (actual time=0.034..2.200 rows=364 loops=1)
+                                       Filter: ((price < '20'::numeric) AND ((status)::text = 'active'::text))
+                                       Rows Removed by Filter: 21197
+                                       Buffers: shared hit=182
+                     ->  Memoize  (cost=0.15..0.17 rows=1 width=11) (actual time=0.000..0.000 rows=1 loops=349)
+                           Cache Key: p.brand_id
+                           Cache Mode: logical
+                           Hits: 309  Misses: 40  Evictions: 0  Overflows: 0  Memory Usage: 5kB
+                           Buffers: shared hit=80
+                           ->  Index Scan using brand_pkey on brand b  (cost=0.14..0.16 rows=1 width=11) (actual time=0.001..0.001 rows=1 loops=40)
+                                 Index Cond: (brand_id = p.brand_id)
+                                 Buffers: shared hit=80
+ Planning:
+   Buffers: shared hit=10
+ Planning Time: 0.407 ms
+ Execution Time: 4.979 ms
+(39 rows)
+

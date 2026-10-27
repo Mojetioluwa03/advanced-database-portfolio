@@ -1,0 +1,17 @@
+===== first 3 rows =====
+-[ RECORD 1 ]----+--------------------------------------------------------------------------------------------------
+product_id       | 5982
+name             | Ivory Compact Headphones
+brand            | Ivory
+matched_variants | [{"sku": "SKU-05982-3", "price": 293.36, "attributes": {"colour": "Black", "capacity": "256GB"}}]
+-[ RECORD 2 ]----+--------------------------------------------------------------------------------------------------
+product_id       | 8447
+name             | Ivory Vintage Laptop
+brand            | Ivory
+matched_variants | [{"sku": "SKU-08447-4", "price": 517.37, "attributes": {"colour": "Black", "capacity": "256GB"}}]
+-[ RECORD 3 ]----+--------------------------------------------------------------------------------------------------
+product_id       | 8842
+name             | Kiln Essential Monitor
+brand            | Kiln
+matched_variants | [{"sku": "SKU-08842-2", "price": 752.72, "attributes": {"colour": "Black", "capacity": "256GB"}}]
+
