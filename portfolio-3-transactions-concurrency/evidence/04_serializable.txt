@@ -1,0 +1,228 @@
+$ concurrency/04_serializable.sh
+PostgreSQL 16.15, localhost:5433/shopstack
+
+############ PHASE 1 - REPEATABLE READ (write skew gets through) ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: 1 unit in each warehouse, so the total is 2
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       1
+ P3 test warehouse 2 |       1
+(2 rows)
+
+
+--- session A: sessions/write_skew_a.sql (starts at 0 ms) ---
+--- session B: sessions/write_skew_b.sql (starts at 400 ms) ---
+[  136 ms] SET
+[  137 ms] SET
+[  137 ms] [A] BEGIN at isolation level repeatable read
+[  137 ms] BEGIN
+[  137 ms]  transaction_isolation 
+[  137 ms] -----------------------
+[  137 ms]  repeatable read
+[  137 ms] (1 row)
+[  137 ms] 
+[  137 ms] [A] safety-stock check: total on hand across both warehouses
+[  137 ms]  total_on_hand 
+[  137 ms] ---------------
+[  137 ms]              2
+[  137 ms] (1 row)
+[  138 ms] 
+[  138 ms] [A] rule: take one only if the total is >= 2, so can_sell = t
+[  138 ms] [A] sleeping 1.5s so both sessions decide before either writes
+[ 1665 ms]  pg_sleep 
+[ 1665 ms] ----------
+[ 1666 ms]  
+[ 1666 ms] (1 row)
+[ 1666 ms] 
+[ 1667 ms] [A] selling one unit from warehouse 1
+[ 1667 ms] UPDATE 1
+[ 1668 ms] INSERT 0 1
+[ 1668 ms] [A] COMMIT
+[ 1669 ms] COMMIT
+[  632 ms] SET
+[  632 ms] SET
+[  632 ms] [B] BEGIN at isolation level repeatable read
+[  632 ms] BEGIN
+[  632 ms]  transaction_isolation 
+[  633 ms] -----------------------
+[  633 ms]  repeatable read
+[  633 ms] (1 row)
+[  633 ms] 
+[  633 ms] [B] safety-stock check: total on hand across both warehouses
+[  633 ms]  total_on_hand 
+[  633 ms] ---------------
+[  633 ms]              2
+[  633 ms] (1 row)
+[  633 ms] 
+[  633 ms] [B] rule: take one only if the total is >= 2, so can_sell = t
+[  634 ms] [B] sleeping 1.5s so both sessions decide before either writes
+[ 2156 ms]  pg_sleep 
+[ 2156 ms] ----------
+[ 2156 ms]  
+[ 2156 ms] (1 row)
+[ 2156 ms] 
+[ 2157 ms] [B] selling one unit from warehouse 2
+[ 2157 ms] UPDATE 1
+[ 2158 ms] INSERT 0 1
+[ 2158 ms] [B] COMMIT
+[ 2158 ms] COMMIT
+--- psql exit status: A=0 B=0 ---
+
+=== committed state ===
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       0
+ P3 test warehouse 2 |       0
+(2 rows)
+
+   reason   | rows | units 
+------------+------+-------
+ adjustment |    2 |    -2
+(1 row)
+
+
+Both sessions committed and neither lost an update, yet the total fell
+from 2 to 0: each read a total of 2 that was true when it read it, and
+the two writes together broke the rule. Snapshot isolation cannot see
+this because the anomaly is across rows, not inside one.
+
+############ PHASE 2 - SERIALIZABLE (the cycle is detected) ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: 1 unit in each warehouse, so the total is 2
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       1
+ P3 test warehouse 2 |       1
+(2 rows)
+
+
+--- session A: sessions/write_skew_a.sql (starts at 0 ms) ---
+--- session B: sessions/write_skew_b.sql (starts at 400 ms) ---
+[  162 ms] SET
+[  163 ms] SET
+[  164 ms] [A] BEGIN at isolation level serializable
+[  164 ms] BEGIN
+[  164 ms]  transaction_isolation 
+[  165 ms] -----------------------
+[  165 ms]  serializable
+[  165 ms] (1 row)
+[  165 ms] 
+[  165 ms] [A] safety-stock check: total on hand across both warehouses
+[  166 ms]  total_on_hand 
+[  166 ms] ---------------
+[  166 ms]              2
+[  166 ms] (1 row)
+[  166 ms] 
+[  166 ms] [A] rule: take one only if the total is >= 2, so can_sell = t
+[  167 ms] [A] sleeping 1.5s so both sessions decide before either writes
+[ 1682 ms]  pg_sleep 
+[ 1682 ms] ----------
+[ 1683 ms]  
+[ 1683 ms] (1 row)
+[ 1683 ms] 
+[ 1684 ms] [A] selling one unit from warehouse 1
+[ 1684 ms] UPDATE 1
+[ 1684 ms] INSERT 0 1
+[ 1684 ms] [A] COMMIT
+[ 1684 ms] COMMIT
+[  644 ms] SET
+[  645 ms] SET
+[  646 ms] [B] BEGIN at isolation level serializable
+[  646 ms] BEGIN
+[  646 ms]  transaction_isolation 
+[  646 ms] -----------------------
+[  647 ms]  serializable
+[  647 ms] (1 row)
+[  647 ms] 
+[  647 ms] [B] safety-stock check: total on hand across both warehouses
+[  647 ms]  total_on_hand 
+[  647 ms] ---------------
+[  648 ms]              2
+[  648 ms] (1 row)
+[  648 ms] 
+[  648 ms] [B] rule: take one only if the total is >= 2, so can_sell = t
+[  648 ms] [B] sleeping 1.5s so both sessions decide before either writes
+[ 2149 ms]  pg_sleep 
+[ 2149 ms] ----------
+[ 2149 ms]  
+[ 2149 ms] (1 row)
+[ 2149 ms] 
+[ 2149 ms] [B] selling one unit from warehouse 2
+[ 2165 ms] psql:sessions/write_skew_b.sql:40: ERROR:  could not serialize access due to read/write dependencies among transactions
+[ 2166 ms] DETAIL:  Reason code: Canceled on identification as a pivot, during write.
+[ 2167 ms] HINT:  The transaction might succeed if retried.
+--- psql exit status: A=0 B=3 ---
+
+=== committed state: one commit, one 40001 ===
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       0
+ P3 test warehouse 2 |       1
+(2 rows)
+
+   reason   | rows | units 
+------------+------+-------
+ adjustment |    1 |    -1
+(1 row)
+
+
+Session B (the second committer) was aborted with 40001. Retrying it:
+
+--- retry: session B re-runs write_skew_b.sql (the caller's retry) ---
+[  113 ms] SET
+[  114 ms] SET
+[  114 ms] [B] BEGIN at isolation level serializable
+[  114 ms] BEGIN
+[  114 ms]  transaction_isolation 
+[  114 ms] -----------------------
+[  115 ms]  serializable
+[  115 ms] (1 row)
+[  115 ms] 
+[  115 ms] [B] safety-stock check: total on hand across both warehouses
+[  115 ms]  total_on_hand 
+[  115 ms] ---------------
+[  115 ms]              1
+[  115 ms] (1 row)
+[  115 ms] 
+[  116 ms] [B] rule: take one only if the total is >= 2, so can_sell = f
+[  116 ms] [B] sleeping 1.5s so both sessions decide before either writes
+[ 1625 ms]  pg_sleep 
+[ 1625 ms] ----------
+[ 1626 ms]  
+[ 1626 ms] (1 row)
+[ 1626 ms] 
+[ 1626 ms] [B] total < 2: refusing and rolling back
+[ 1626 ms] ROLLBACK
+--- retry psql exit status: 0 ---
+
+=== final state after the retry ===
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       0
+ P3 test warehouse 2 |       1
+(2 rows)
+
+   reason   | rows | units 
+------------+------+-------
+ adjustment |    1 |    -1
+(1 row)
+
+
+The retry re-ran the same code, read the total of 1 left by the winner,
+and refused the sale. One unit was sold, one remains, and the invariant
+held. The price of SERIALIZABLE is that the losing transaction must be
+retried by the application; the price of REPEATABLE READ is a silently
+broken rule.

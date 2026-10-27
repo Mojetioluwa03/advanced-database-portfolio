@@ -1,0 +1,214 @@
+$ concurrency/01_lost_update.sh
+PostgreSQL 16.15, localhost:5433/shopstack
+
+############ PHASE 1 - naive read-modify-write (the bug) ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: one unit on hand, no orders, empty ledger
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+--- session A: sessions/lost_update_a.sql (starts at 0 ms) ---
+--- session B: sessions/lost_update_b.sql (starts at 400 ms) ---
+[  126 ms] SET
+[  126 ms] [A] BEGIN
+[  127 ms] BEGIN
+[  142 ms] INSERT 0 1
+[  142 ms] INSERT 0 1
+[  157 ms] [A] order 200027 created; read on-hand = 1
+[  158 ms] [A] validating the payment for 2s
+[ 2176 ms]  pg_sleep 
+[ 2177 ms] ----------
+[ 2177 ms]  
+[ 2177 ms] (1 row)
+[ 2178 ms] 
+[ 2178 ms] [A] writing back 1 - 1
+[ 2178 ms] UPDATE 1
+[ 2178 ms] INSERT 0 1
+[ 2179 ms] UPDATE 1
+[ 2179 ms] [A] COMMIT - order 200027 paid, one unit sold
+[ 2179 ms] COMMIT
+[  608 ms] SET
+[  608 ms] [B] BEGIN (0.4s after A)
+[  608 ms] BEGIN
+[  623 ms] INSERT 0 1
+[  624 ms] INSERT 0 1
+[  624 ms] [B] order 200028 created; read on-hand = 1 (A has not committed yet)
+[  625 ms] [B] validating the payment for 2.4s
+[ 3033 ms]  pg_sleep 
+[ 3034 ms] ----------
+[ 3034 ms]  
+[ 3034 ms] (1 row)
+[ 3034 ms] 
+[ 3035 ms] [B] writing back 1 - 1
+[ 3035 ms] UPDATE 1
+[ 3035 ms] INSERT 0 1
+[ 3035 ms] UPDATE 1
+[ 3035 ms] [B] COMMIT - order 200028 paid, one unit sold
+[ 3035 ms] COMMIT
+--- psql exit status: A=0 B=0 ---
+
+=== committed outcome of phase 1 ===
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       0 |      2 |              2 |         -2
+(1 row)
+
+ order_id | status | units | delta | reason 
+----------+--------+-------+-------+--------
+   200027 | paid   |     1 |    -1 | sale
+   200028 | paid   |     1 |    -1 | sale
+(2 rows)
+
+
+Two paid orders and two -1 sale movements from a single unit on hand:
+the second read erased the first write and the ledger now claims 2 units
+left the warehouse. The CHECK constraint never fired because neither
+session wrote a negative number - the arithmetic was done before the row
+was locked, not by the database.
+
+############ PHASE 2 - SELECT ... FOR UPDATE (the fix) ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: identical fixture
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+--- session A: sessions/lost_update_a_locked.sql (starts at 0 ms) ---
+--- session B: sessions/lost_update_b_locked.sql (starts at 400 ms) ---
+[  129 ms] SET
+[  130 ms] [A] BEGIN
+[  130 ms] BEGIN
+[  144 ms] INSERT 0 1
+[  160 ms] INSERT 0 1
+[  161 ms] [A] SELECT ... FOR UPDATE (takes the row lock)
+[  161 ms] [A] order 200029 created; locked and read on-hand = 1
+[  161 ms] [A] validating the payment for 2s
+[ 2169 ms]  pg_sleep 
+[ 2169 ms] ----------
+[ 2169 ms]  
+[ 2170 ms] (1 row)
+[ 2170 ms] 
+[ 2171 ms] UPDATE 1
+[ 2172 ms] INSERT 0 1
+[ 2172 ms] UPDATE 1
+[ 2174 ms] [A] COMMIT - order 200029 paid, one unit sold
+[ 2175 ms] COMMIT
+[  642 ms] SET
+[  643 ms] [B] BEGIN (0.4s after A)
+[  643 ms] BEGIN
+[  658 ms] INSERT 0 1
+[  659 ms] INSERT 0 1
+[  659 ms] [B] order 200030 created; SELECT ... FOR UPDATE - this waits for A
+[ 2169 ms] [B] unblocked; on-hand is now 0
+[ 2170 ms] [B] not enough stock: refusing the sale and rolling back
+[ 2170 ms] ROLLBACK
+[ 2171 ms]  b_orders_remaining 
+[ 2172 ms] --------------------
+[ 2173 ms]                   0
+[ 2173 ms] (1 row)
+[ 2173 ms] 
+--- psql exit status: A=0 B=0 ---
+
+=== committed outcome of phase 2 ===
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       0 |      1 |              1 |         -1
+(1 row)
+
+ order_id | status | units | delta | reason 
+----------+--------+-------+-------+--------
+   200029 | paid   |     1 |    -1 | sale
+(1 row)
+
+
+Session B blocked from 400 ms until A committed at ~2 s, then read 0,
+refused the sale and rolled back. One unit sold, one order, ledger and
+stock agree.
+
+############ PHASE 3 - guarded UPDATE, no explicit lock ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: identical fixture
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+--- session A: sessions/lost_update_a_atomic.sql (starts at 0 ms) ---
+--- session B: sessions/lost_update_b_atomic.sql (starts at 400 ms) ---
+[  140 ms] SET
+[  141 ms] [A] BEGIN
+[  141 ms] BEGIN
+[  156 ms] INSERT 0 1
+[  157 ms] INSERT 0 1
+[  157 ms] [A] validating the payment for 2s
+[ 2178 ms]  pg_sleep 
+[ 2179 ms] ----------
+[ 2179 ms]  
+[ 2179 ms] (1 row)
+[ 2179 ms] 
+[ 2180 ms] [A] UPDATE ... WHERE quantity >= 1 (no SELECT FOR UPDATE)
+[ 2180 ms] INSERT 0 1
+[ 2180 ms] UPDATE 1
+[ 2181 ms] [A] the guard matched; COMMIT - order 200031 paid, on-hand now 0
+[ 2181 ms] COMMIT
+[  653 ms] SET
+[  654 ms] [B] BEGIN (0.4s after A)
+[  654 ms] BEGIN
+[  669 ms] INSERT 0 1
+[  669 ms] INSERT 0 1
+[  669 ms] [B] validating the payment for 2s
+[ 2692 ms]  pg_sleep 
+[ 2692 ms] ----------
+[ 2692 ms]  
+[ 2693 ms] (1 row)
+[ 2693 ms] 
+[ 2693 ms] [B] UPDATE ... WHERE quantity >= 1 (no SELECT FOR UPDATE)
+[ 2694 ms] [B] the guard matched no row: refusing the sale and rolling back
+[ 2694 ms] ROLLBACK
+[ 2695 ms]  b_orders_remaining 
+[ 2695 ms] --------------------
+[ 2695 ms]                   0
+[ 2696 ms] (1 row)
+[ 2696 ms] 
+--- psql exit status: A=0 B=0 ---
+
+=== committed outcome of phase 3 ===
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       0 |      1 |              1 |         -1
+(1 row)
+
+ order_id | status | units | delta | reason 
+----------+--------+-------+-------+--------
+   200031 | paid   |     1 |    -1 | sale
+(1 row)
+
+
+Neither session read the stock to decide anything. The WHERE clause was
+evaluated by the database against the row version it was about to write,
+so B's guard matched no row. Same outcome as phase 2, one statement
+instead of two, and no lock held across the 2s payment call.

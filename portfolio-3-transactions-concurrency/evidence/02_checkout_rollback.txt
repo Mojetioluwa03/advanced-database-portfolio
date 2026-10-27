@@ -1,0 +1,73 @@
+$ psql -h localhost -p 5433 -U postgres -d shopstack -f transactions/02_checkout_rollback.sql
+
+SET
+SET
+BEGIN
+DELETE 1
+DELETE 1
+DELETE 1
+DELETE 1
+DELETE 2
+DELETE 1
+DELETE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+COMMIT
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+SET
+
+=== BEFORE ===
+     sku     |     warehouse     | on_hand 
+-------------+-------------------+---------
+ P3-RACE-SKU | P3 test warehouse |      10
+(1 row)
+
+BEGIN
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+
+--- order, line and stock are written; now the payment leg fails ---
+psql:transactions/02_checkout_rollback.sql:55: ERROR:  new row for relation "payment" violates check constraint "ck_payment_amount"
+DETAIL:  Failing row contains (181523, 200009, stripe, card, -50.00, paid, pi_p3_declined_02, 2026-10-27 18:45:39.666476+00).
+--- any statement now fails with 25P02 until the transaction ends ---
+psql:transactions/02_checkout_rollback.sql:60: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+
+--- ROLLBACK ---
+ROLLBACK
+
+=== AFTER ROLLBACK: nothing the failed checkout wrote survives ===
+     sku     |     warehouse     | on_hand 
+-------------+-------------------+---------
+ P3-RACE-SKU | P3 test warehouse |      10
+(1 row)
+
+ orders_placed 
+---------------
+             0
+(1 row)
+
+ sale_movements | units_moved 
+----------------+-------------
+              0 |           0
+(1 row)
+
+ payments 
+----------
+        0
+(1 row)
+
+
+--- psql exit status: 0 ---

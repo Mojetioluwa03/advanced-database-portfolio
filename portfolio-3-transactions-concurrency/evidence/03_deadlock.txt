@@ -1,0 +1,80 @@
+$ concurrency/03_deadlock.sh
+PostgreSQL 16.15, localhost:5433/shopstack
+ deadlock_timeout 
+------------------
+ 1s
+(1 row)
+
+
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: 1 unit in each warehouse, no orders, empty ledger
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       1
+ P3 test warehouse 2 |       1
+(2 rows)
+
+
+--- session A: sessions/deadlock_a.sql (starts at 0 ms) ---
+--- session B: sessions/deadlock_b.sql (starts at 400 ms) ---
+[  128 ms] SET
+[  128 ms] [A] BEGIN
+[  128 ms] BEGIN
+[  128 ms] [A] lock warehouse 1
+[  143 ms] UPDATE 1
+[  143 ms] INSERT 0 1
+[  143 ms] [A] holding warehouse 1; sleeping 2s
+[ 2160 ms]  pg_sleep 
+[ 2160 ms] ----------
+[ 2160 ms]  
+[ 2160 ms] (1 row)
+[ 2160 ms] 
+[ 2160 ms] [A] now lock warehouse 2
+[ 3173 ms] psql:sessions/deadlock_a.sql:36: ERROR:  deadlock detected
+[ 3174 ms] DETAIL:  Process 21076 waits for ShareLock on transaction 1408; blocked by process 4312.
+[ 3175 ms] Process 4312 waits for ShareLock on transaction 1407; blocked by process 21076.
+[ 3175 ms] HINT:  See server log for query details.
+[ 3176 ms] CONTEXT:  while updating tuple (178,148) in relation "stock_level"
+[  612 ms] SET
+[  612 ms] [B] BEGIN
+[  612 ms] BEGIN
+[  613 ms] [B] lock warehouse 2
+[  613 ms] UPDATE 1
+[  613 ms] INSERT 0 1
+[  613 ms] [B] holding warehouse 2; sleeping 2s
+[ 2641 ms]  pg_sleep 
+[ 2641 ms] ----------
+[ 2641 ms]  
+[ 2641 ms] (1 row)
+[ 2641 ms] 
+[ 2641 ms] [B] now lock warehouse 1
+[ 3172 ms] UPDATE 1
+[ 3174 ms] INSERT 0 1
+[ 3174 ms] [B] COMMIT - both rows updated
+[ 3174 ms] COMMIT
+--- psql exit status: A=3 B=0 ---
+
+=== committed state after the deadlock ===
+      warehouse      | on_hand 
+---------------------+---------
+ P3 test warehouse   |       0
+ P3 test warehouse 2 |       0
+(2 rows)
+
+   reason   | rows | units 
+------------+------+-------
+ adjustment |    2 |    -2
+(1 row)
+
+
+One session was aborted with 'deadlock detected' (SQLSTATE 40P01); its
+transaction ended, releasing its lock, and the survivor updated the row
+it was waiting for. Both rows are now 0, and the ledger holds exactly
+two rows totalling -2: the survivor's. The victim's first update and its
+first ledger row were rolled back, so nothing was counted twice.

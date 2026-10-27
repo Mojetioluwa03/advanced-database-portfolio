@@ -76,7 +76,7 @@ advanced-database-portfolio/
 |---|---|---|---|
 | 1 | Database Design and Modelling (7) | Complete | `portfolio-1-database-design/` |
 | 2 | Query Processing and Optimisation (7) | Complete | `portfolio-2-query-optimisation/` |
-| 3 | Transactions and Concurrency (7) | Not started | — |
+| 3 | Transactions and Concurrency (7) | Complete | `portfolio-3-transactions-concurrency/` |
 | 4 | NoSQL and Advanced Data Models (7) | Not started | — |
 | 5 | Distributed and Cloud Database Exercise (6) | Not started | — |
 | — | Final Documentation (6) | Not started | — |
@@ -156,7 +156,7 @@ of the chosen NoSQL store for Portfolio 4. This portfolio complies as follows.
 |---|---|---|
 | P1 Design and modelling | SQL — DDL, DML and verification | `schema.sql`, `load.sql`, `checks.sql` |
 | P2 Query and optimisation | SQL, run through psql | `queries.sql`, `indexes.sql`, captured `EXPLAIN (ANALYZE, BUFFERS)` output |
-| P3 Transactions | SQL, two concurrent psql sessions | `BEGIN`/`COMMIT`/`ROLLBACK`, `SET TRANSACTION ISOLATION LEVEL`, `SELECT … FOR UPDATE` |
+| P3 Transactions | SQL, two concurrent psql sessions | `BEGIN`/`COMMIT`/`ROLLBACK`/`SAVEPOINT`, isolation levels, `SELECT … FOR UPDATE` |
 | P4 NoSQL | MongoDB query language (MQL) via the driver | `portfolio-4-nosql/` |
 | P5 Distributed and cloud | SQL plus deployment configuration | `portfolio-5-distributed-cloud/` |
 

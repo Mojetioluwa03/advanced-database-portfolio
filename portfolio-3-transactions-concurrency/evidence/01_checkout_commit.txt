@@ -1,0 +1,71 @@
+$ psql -h localhost -p 5433 -U postgres -d shopstack -f transactions/01_checkout_commit.sql
+
+SET
+SET
+BEGIN
+DELETE 1
+DELETE 1
+DELETE 1
+DELETE 1
+DELETE 2
+DELETE 1
+DELETE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+COMMIT
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+SET
+
+=== BEFORE: stock on hand and this customer's order count ===
+     sku     |     warehouse     | on_hand 
+-------------+-------------------+---------
+ P3-RACE-SKU | P3 test warehouse |      10
+(1 row)
+
+ orders 
+--------
+      0
+(1 row)
+
+BEGIN
+
+--- BEGIN: six statements, no COMMIT yet ---
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+--- inside the transaction, before COMMIT (visible to this session only) ---
+ order_id | status |     warehouse     | on_hand 
+----------+--------+-------------------+---------
+   200008 | paid   | P3 test warehouse |       8
+(1 row)
+
+COMMIT
+--- COMMIT ---
+
+=== AFTER: the same three questions, answered from committed state ===
+     sku     |     warehouse     | on_hand 
+-------------+-------------------+---------
+ P3-RACE-SKU | P3 test warehouse |       8
+(1 row)
+
+ order_id | status | grand_total | quantity | unit_price | line_total | provider | payment_status | amount | delta | reason 
+----------+--------+-------------+----------+------------+------------+----------+----------------+--------+-------+--------
+   200008 | paid   |       50.00 |        2 |      25.00 |      50.00 | stripe   | paid           |  50.00 |    -2 | sale
+(1 row)
+
+
+--- psql exit status: 0 ---

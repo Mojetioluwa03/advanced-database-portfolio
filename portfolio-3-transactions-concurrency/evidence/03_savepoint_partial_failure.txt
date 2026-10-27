@@ -1,0 +1,72 @@
+$ psql -h localhost -p 5433 -U postgres -d shopstack -f transactions/03_savepoint_partial_failure.sql
+
+SET
+SET
+BEGIN
+DELETE 0
+DELETE 0
+DELETE 1
+DELETE 1
+DELETE 2
+DELETE 1
+DELETE 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+COMMIT
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+SET
+
+=== BEFORE ===
+     sku     |     warehouse     | on_hand 
+-------------+-------------------+---------
+ P3-RACE-SKU | P3 test warehouse |      10
+(1 row)
+
+BEGIN
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+INSERT 0 1
+SAVEPOINT
+
+--- SAVEPOINT before_payment: the first card is declined ---
+psql:transactions/03_savepoint_partial_failure.sql:55: ERROR:  new row for relation "payment" violates check constraint "ck_payment_amount"
+DETAIL:  Failing row contains (181524, 200010, stripe, card, -50.00, paid, pi_p3_declined_03, 2026-10-27 18:45:40.084754+00).
+
+--- ROLLBACK TO SAVEPOINT: undo the failed charge only ---
+ROLLBACK
+INSERT 0 1
+UPDATE 1
+COMMIT
+
+--- COMMIT ---
+
+=== AFTER: the reservation survived, the charge did not ===
+     sku     |     warehouse     | on_hand 
+-------------+-------------------+---------
+ P3-RACE-SKU | P3 test warehouse |       8
+(1 row)
+
+ order_id | status  | quantity | line_total | payment_status | amount |   provider_ref    
+----------+---------+----------+------------+----------------+--------+-------------------
+   200010 | pending |        2 |      50.00 | failed         |  50.00 | pi_p3_declined_03
+(1 row)
+
+ sale_movements 
+----------------
+              1
+(1 row)
+
+
+--- psql exit status: 0 ---

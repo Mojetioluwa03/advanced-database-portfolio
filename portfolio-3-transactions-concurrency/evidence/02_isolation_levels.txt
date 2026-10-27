@@ -1,0 +1,234 @@
+$ concurrency/02_isolation_levels.sh
+PostgreSQL 16.15, localhost:5433/shopstack
+
+############ PHASE 1 - READ COMMITTED ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: 1 unit on hand, empty ledger
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+--- session A: sessions/isolation_observer.sql (starts at 0 ms) ---
+--- session B: sessions/isolation_writer.sql (starts at 400 ms) ---
+[  137 ms] SET
+[  138 ms] SET
+[  138 ms] [A] BEGIN at isolation level read committed
+[  138 ms] BEGIN
+[  138 ms]  transaction_isolation 
+[  138 ms] -----------------------
+[  139 ms]  read committed
+[  139 ms] (1 row)
+[  139 ms] 
+[  139 ms] [A] read 1 - before B commits
+[  184 ms]  on_hand | movements 
+[  185 ms] ---------+-----------
+[  185 ms]        1 |         0
+[  185 ms] (1 row)
+[  185 ms] 
+[  185 ms] [A] sleeping 2s - B restocks and commits in this window
+[ 2180 ms]  pg_sleep 
+[ 2180 ms] ----------
+[ 2180 ms]  
+[ 2181 ms] (1 row)
+[ 2181 ms] 
+[ 2181 ms] [A] read 2 - same transaction, B has committed
+[ 2227 ms]  on_hand | movements 
+[ 2227 ms] ---------+-----------
+[ 2227 ms]        5 |         1
+[ 2230 ms] (1 row)
+[ 2275 ms] 
+[ 3252 ms]  pg_sleep 
+[ 3253 ms] ----------
+[ 3253 ms]  
+[ 3253 ms] (1 row)
+[ 3253 ms] 
+[ 3253 ms] [A] read 3 - 1s later, still the same transaction
+[ 3283 ms]  on_hand | movements 
+[ 3283 ms] ---------+-----------
+[ 3283 ms]        5 |         1
+[ 3283 ms] (1 row)
+[ 3283 ms] 
+[ 3283 ms] COMMIT
+[  651 ms] SET
+[  652 ms] [B] BEGIN
+[  652 ms] BEGIN
+[  652 ms] UPDATE 1
+[  667 ms] INSERT 0 1
+[  667 ms] [B] restocked 4 units; own uncommitted view:
+[  698 ms]  on_hand | movements 
+[  698 ms] ---------+-----------
+[  698 ms]        5 |         1
+[  698 ms] (1 row)
+[  698 ms] 
+[  698 ms] [B] COMMIT
+[  699 ms] COMMIT
+--- psql exit status: A=0 B=0 ---
+
+=== committed state after the writer ===
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       5 |      0 |              0 |          0
+(1 row)
+
+
+Each statement saw the newest committed data: B's committed restock
+appeared in the middle of A's transaction. That is a non-repeatable
+read (the row changed) plus a phantom (the count gained a row).
+
+############ PHASE 2 - REPEATABLE READ ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: 1 unit on hand, empty ledger
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+--- session A: sessions/isolation_observer.sql (starts at 0 ms) ---
+--- session B: sessions/isolation_writer.sql (starts at 400 ms) ---
+[  109 ms] SET
+[  110 ms] SET
+[  110 ms] [A] BEGIN at isolation level repeatable read
+[  110 ms] BEGIN
+[  110 ms]  transaction_isolation 
+[  110 ms] -----------------------
+[  110 ms]  repeatable read
+[  111 ms] (1 row)
+[  111 ms] 
+[  111 ms] [A] read 1 - before B commits
+[  157 ms]  on_hand | movements 
+[  157 ms] ---------+-----------
+[  158 ms]        1 |         0
+[  158 ms] (1 row)
+[  159 ms] 
+[  159 ms] [A] sleeping 2s - B restocks and commits in this window
+[ 2165 ms]  pg_sleep 
+[ 2165 ms] ----------
+[ 2166 ms]  
+[ 2166 ms] (1 row)
+[ 2166 ms] 
+[ 2166 ms] [A] read 2 - same transaction, B has committed
+[ 2196 ms]  on_hand | movements 
+[ 2196 ms] ---------+-----------
+[ 2196 ms]        1 |         0
+[ 2196 ms] (1 row)
+[ 2196 ms] 
+[ 3216 ms]  pg_sleep 
+[ 3216 ms] ----------
+[ 3216 ms]  
+[ 3216 ms] (1 row)
+[ 3216 ms] 
+[ 3217 ms] [A] read 3 - 1s later, still the same transaction
+[ 3247 ms]  on_hand | movements 
+[ 3247 ms] ---------+-----------
+[ 3248 ms]        1 |         0
+[ 3248 ms] (1 row)
+[ 3248 ms] 
+[ 3248 ms] COMMIT
+[  651 ms] SET
+[  652 ms] [B] BEGIN
+[  652 ms] BEGIN
+[  652 ms] UPDATE 1
+[  653 ms] INSERT 0 1
+[  653 ms] [B] restocked 4 units; own uncommitted view:
+[  681 ms]  on_hand | movements 
+[  681 ms] ---------+-----------
+[  682 ms]        5 |         1
+[  682 ms] (1 row)
+[  682 ms] 
+[  682 ms] [B] COMMIT
+[  682 ms] COMMIT
+--- psql exit status: A=0 B=0 ---
+
+=== committed state after the writer ===
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       5 |      0 |              0 |          0
+(1 row)
+
+
+The same two statements returned the same two answers all three times:
+the transaction read from one snapshot taken at its first statement, so
+the writer's commit, under a second into A's transaction, was invisible
+to it. Nothing was blocked; the cost is that A could commit a decision
+based on data that is 3s old.
+
+############ PHASE 3 - READ UNCOMMITTED (a dirty read that never happens) ############
+fixture ready: P3-RACE-SKU with 10 units in each test warehouse, customer p3.tester@example.test
+     sku     |      warehouse      | on_hand 
+-------------+---------------------+---------
+ P3-RACE-SKU | P3 test warehouse   |      10
+ P3-RACE-SKU | P3 test warehouse 2 |      10
+(2 rows)
+
+starting state: 1 unit on hand
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+--- session A: sessions/dirty_reader.sql (starts at 0 ms) ---
+--- session B: sessions/dirty_writer.sql (starts at 400 ms) ---
+[  143 ms] SET
+[  143 ms] SET
+[  143 ms] [A] BEGIN at isolation level read uncommitted
+[  143 ms] BEGIN
+[  144 ms]  transaction_isolation 
+[  144 ms] -----------------------
+[  144 ms]  read uncommitted
+[  144 ms] (1 row)
+[  144 ms] 
+[  144 ms] [A] waiting 1.2s so B has written 999 before this read
+[ 1359 ms]  pg_sleep 
+[ 1360 ms] ----------
+[ 1360 ms]  
+[ 1360 ms] (1 row)
+[ 1360 ms] 
+[ 1361 ms] [A] read while 999 is written but uncommitted
+[ 1361 ms]  on_hand 
+[ 1361 ms] ---------
+[ 1361 ms]        1
+[ 1361 ms] (1 row)
+[ 1362 ms] 
+[ 1362 ms] COMMIT
+[  672 ms] SET
+[  673 ms] [B] BEGIN - a change nobody should see yet
+[  673 ms] BEGIN
+[  688 ms] UPDATE 1
+[  688 ms] [B] on-hand is 999 inside this transaction, held uncommitted for 3s
+[ 3695 ms]  pg_sleep 
+[ 3695 ms] ----------
+[ 3696 ms]  
+[ 3696 ms] (1 row)
+[ 3696 ms] 
+[ 3696 ms] [B] ROLLBACK - the 999 never existed
+[ 3696 ms] ROLLBACK
+--- psql exit status: A=0 B=0 ---
+
+=== committed state after the rollback ===
+ on_hand | orders | sale_movements | units_sold 
+---------+--------+----------------+------------
+       1 |      0 |              0 |          0
+(1 row)
+
+
+B held 999 uncommitted for 3s. A asked for READ UNCOMMITTED - the level
+that exists precisely to permit dirty reads - and still read 1, because
+PostgreSQL has no dirty reads at any level: readers see the last
+committed version and never block on the writer. SHOW echoes the level
+back, but the behaviour is READ COMMITTED's.
