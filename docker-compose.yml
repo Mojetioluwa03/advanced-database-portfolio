@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: shopstack-pg
+    environment:
+      POSTGRES_DB: shopstack
+      POSTGRES_USER: shopstack
+      POSTGRES_PASSWORD: shopstack
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopstack -d shopstack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

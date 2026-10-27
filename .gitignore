@@ -1,0 +1,18 @@
+# Generated seed data (~100 MB) — reproducible with `python seed.py`
+seed-data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local database volumes and logs
+pgdata/
+*.log
