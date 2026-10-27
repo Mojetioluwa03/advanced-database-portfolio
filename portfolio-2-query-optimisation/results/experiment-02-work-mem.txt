@@ -1,0 +1,64 @@
+=== work_mem = 4MB (server default) ===
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=31645.89..31646.14 rows=100 width=107) (actual time=186.169..186.179 rows=100 loops=1)
+   Buffers: shared hit=1955
+   ->  Sort  (cost=31645.89..32096.07 rows=180073 width=107) (actual time=186.166..186.172 rows=100 loops=1)
+         Sort Key: (sum(o.grand_total)) DESC
+         Sort Method: top-N heapsort  Memory: 48kB
+         Buffers: shared hit=1955
+         ->  GroupAggregate  (cost=1.05..24763.63 rows=180073 width=107) (actual time=0.127..175.325 rows=48593 loops=1)
+               Group Key: o.customer_id, c.email
+               Buffers: shared hit=1952
+               ->  Incremental Sort  (cost=1.05..18010.89 rows=180073 width=41) (actual time=0.094..110.254 rows=179983 loops=1)
+                     Sort Key: o.customer_id, c.email
+                     Presorted Key: o.customer_id
+                     Full-sort Groups: 5321  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+                     Buffers: shared hit=1952
+                     ->  Merge Join  (cost=0.75..13095.58 rows=180073 width=41) (actual time=0.046..81.367 rows=179983 loops=1)
+                           Merge Cond: (o.customer_id = c.customer_id)
+                           Buffers: shared hit=1949
+                           ->  Index Only Scan using ix_order_customer on customer_order o  (cost=0.42..8792.42 rows=180073 width=18) (actual time=0.012..44.870 rows=179983 loops=1)
+                                 Filter: ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[]))
+                                 Rows Removed by Filter: 20017
+                                 Heap Fetches: 0
+                                 Buffers: shared hit=1193
+                           ->  Index Scan using customer_pkey on customer c  (cost=0.29..1927.29 rows=50000 width=27) (actual time=0.033..14.178 rows=50000 loops=1)
+                                 Buffers: shared hit=756
+ Planning:
+   Buffers: shared hit=285
+ Planning Time: 6.376 ms
+ Execution Time: 186.310 ms
+(28 rows)
+
+=== work_mem = 64MB ===
+                                                                   QUERY PLAN                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=21250.73..21250.98 rows=100 width=107) (actual time=236.148..236.160 rows=100 loops=1)
+   Buffers: shared hit=3018
+   ->  Sort  (cost=21250.73..21700.92 rows=180073 width=107) (actual time=236.146..236.152 rows=100 loops=1)
+         Sort Key: (sum(o.grand_total)) DESC
+         Sort Method: top-N heapsort  Memory: 47kB
+         Buffers: shared hit=3018
+         ->  HashAggregate  (cost=10316.83..14368.47 rows=180073 width=107) (actual time=188.483..227.439 rows=48593 loops=1)
+               Group Key: o.customer_id, c.email
+               Batches: 1  Memory Usage: 30737kB
+               Buffers: shared hit=3018
+               ->  Hash Join  (cost=1743.00..7615.74 rows=180073 width=41) (actual time=9.408..105.798 rows=179983 loops=1)
+                     Hash Cond: (o.customer_id = c.customer_id)
+                     Buffers: shared hit=3018
+                     ->  Seq Scan on customer_order o  (cost=0.00..5400.00 rows=180073 width=18) (actual time=0.027..33.661 rows=179983 loops=1)
+                           Filter: ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[]))
+                           Rows Removed by Filter: 20017
+                           Buffers: shared hit=2400
+                     ->  Hash  (cost=1118.00..1118.00 rows=50000 width=27) (actual time=9.176..9.177 rows=50000 loops=1)
+                           Buckets: 65536  Batches: 1  Memory Usage: 3442kB
+                           Buffers: shared hit=618
+                           ->  Seq Scan on customer c  (cost=0.00..1118.00 rows=50000 width=27) (actual time=0.008..3.550 rows=50000 loops=1)
+                                 Buffers: shared hit=618
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.316 ms
+ Execution Time: 240.408 ms
+(26 rows)
+

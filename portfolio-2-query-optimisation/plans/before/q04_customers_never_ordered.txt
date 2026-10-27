@@ -1,0 +1,75 @@
+===== run 1 =====
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=9148.67..9167.04 rows=7347 width=71) (actual time=183.102..183.159 rows=883 loops=1)
+   Sort Key: c.created_at
+   Sort Method: quicksort  Memory: 93kB
+   Buffers: shared hit=3021
+   ->  Hash Right Anti Join  (cost=1823.69..8676.88 rows=7347 width=71) (actual time=180.736..182.460 rows=883 loops=1)
+         Hash Cond: (o.customer_id = c.customer_id)
+         Buffers: shared hit=3018
+         ->  Seq Scan on customer_order o  (cost=0.00..4400.00 rows=200000 width=4) (actual time=0.031..38.094 rows=200000 loops=1)
+               Buffers: shared hit=2400
+         ->  Hash  (cost=1243.00..1243.00 rows=46455 width=46) (actual time=62.297..62.299 rows=46517 loops=1)
+               Buckets: 65536  Batches: 1  Memory Usage: 4263kB
+               Buffers: shared hit=618
+               ->  Seq Scan on customer c  (cost=0.00..1243.00 rows=46455 width=46) (actual time=0.053..46.582 rows=46517 loops=1)
+                     Filter: ((status)::text = 'active'::text)
+                     Rows Removed by Filter: 3483
+                     Buffers: shared hit=618
+ Planning:
+   Buffers: shared hit=228
+ Planning Time: 8.916 ms
+ Execution Time: 183.978 ms
+(20 rows)
+
+===== run 2 =====
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=9148.67..9167.04 rows=7347 width=71) (actual time=79.296..79.347 rows=883 loops=1)
+   Sort Key: c.created_at
+   Sort Method: quicksort  Memory: 93kB
+   Buffers: shared hit=3018
+   ->  Hash Right Anti Join  (cost=1823.69..8676.88 rows=7347 width=71) (actual time=77.497..78.956 rows=883 loops=1)
+         Hash Cond: (o.customer_id = c.customer_id)
+         Buffers: shared hit=3018
+         ->  Seq Scan on customer_order o  (cost=0.00..4400.00 rows=200000 width=4) (actual time=0.018..13.889 rows=200000 loops=1)
+               Buffers: shared hit=2400
+         ->  Hash  (cost=1243.00..1243.00 rows=46455 width=46) (actual time=20.597..20.598 rows=46517 loops=1)
+               Buckets: 65536  Batches: 1  Memory Usage: 4263kB
+               Buffers: shared hit=618
+               ->  Seq Scan on customer c  (cost=0.00..1243.00 rows=46455 width=46) (actual time=0.011..10.177 rows=46517 loops=1)
+                     Filter: ((status)::text = 'active'::text)
+                     Rows Removed by Filter: 3483
+                     Buffers: shared hit=618
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.179 ms
+ Execution Time: 79.885 ms
+(20 rows)
+
+===== run 3 =====
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=9148.67..9167.04 rows=7347 width=71) (actual time=77.969..78.019 rows=883 loops=1)
+   Sort Key: c.created_at
+   Sort Method: quicksort  Memory: 93kB
+   Buffers: shared hit=3018
+   ->  Hash Right Anti Join  (cost=1823.69..8676.88 rows=7347 width=71) (actual time=76.217..77.660 rows=883 loops=1)
+         Hash Cond: (o.customer_id = c.customer_id)
+         Buffers: shared hit=3018
+         ->  Seq Scan on customer_order o  (cost=0.00..4400.00 rows=200000 width=4) (actual time=0.016..13.345 rows=200000 loops=1)
+               Buffers: shared hit=2400
+         ->  Hash  (cost=1243.00..1243.00 rows=46455 width=46) (actual time=19.623..19.625 rows=46517 loops=1)
+               Buckets: 65536  Batches: 1  Memory Usage: 4263kB
+               Buffers: shared hit=618
+               ->  Seq Scan on customer c  (cost=0.00..1243.00 rows=46455 width=46) (actual time=0.011..9.654 rows=46517 loops=1)
+                     Filter: ((status)::text = 'active'::text)
+                     Rows Removed by Filter: 3483
+                     Buffers: shared hit=618
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.183 ms
+ Execution Time: 78.551 ms
+(20 rows)
+

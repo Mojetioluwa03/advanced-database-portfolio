@@ -1,0 +1,19 @@
+Time: 0.660 ms
+BUILD ix_order_date
+Time: 2543.737 ms (00:02.544)
+BUILD ix_payment_order_recent
+Time: 1338.473 ms (00:01.338)
+BUILD ix_order_customer
+Time: 1915.787 ms (00:01.916)
+BUILD ix_order_line_variant
+Time: 4378.155 ms (00:04.378)
+BUILD ix_stock_movement_sales
+Time: 2914.604 ms (00:02.915)
+BUILD ix_product_category_category
+Time: 60.633 ms
+Time: 21.160 ms
+Time: 723.909 ms
+Time: 391.171 ms
+Time: 457.990 ms
+Time: 260.776 ms
+Time: 23.427 ms

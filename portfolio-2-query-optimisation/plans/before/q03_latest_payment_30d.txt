@@ -1,0 +1,71 @@
+===== run 1 =====
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=4159.33..32182147.92 rows=7736 width=53) (actual time=80.453..147901.669 rows=8023 loops=1)
+   Buffers: shared hit=15166425
+   ->  Index Scan using customer_order_pkey on customer_order o  (cost=0.42..8607.42 rows=7736 width=27) (actual time=41.454..94.183 rows=8023 loops=1)
+         Filter: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date))
+         Rows Removed by Filter: 191977
+         Buffers: shared hit=2949
+   ->  Limit  (cost=4158.91..4158.91 rows=1 width=34) (actual time=18.415..18.416 rows=1 loops=8023)
+         Buffers: shared hit=15163476
+         ->  Sort  (cost=4158.91..4158.91 rows=1 width=34) (actual time=18.409..18.409 rows=1 loops=8023)
+               Sort Key: p.created_at DESC, p.payment_id DESC
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=15163476
+               ->  Seq Scan on payment p  (cost=0.00..4158.90 rows=1 width=34) (actual time=18.027..18.370 rows=1 loops=8023)
+                     Filter: (order_id = o.order_id)
+                     Rows Removed by Filter: 181511
+                     Buffers: shared hit=15163470
+ Planning:
+   Buffers: shared hit=136
+ Planning Time: 3.381 ms
+ Execution Time: 147909.563 ms
+(20 rows)
+
+===== run 2 =====
+                                                                       QUERY PLAN                                                                        
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=4159.33..32182147.92 rows=7736 width=53) (actual time=51.625..191696.222 rows=8023 loops=1)
+   Buffers: shared hit=15166419
+   ->  Index Scan using customer_order_pkey on customer_order o  (cost=0.42..8607.42 rows=7736 width=27) (actual time=37.514..100.012 rows=8023 loops=1)
+         Filter: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date))
+         Rows Removed by Filter: 191977
+         Buffers: shared hit=2949
+   ->  Limit  (cost=4158.91..4158.91 rows=1 width=34) (actual time=23.870..23.871 rows=1 loops=8023)
+         Buffers: shared hit=15163470
+         ->  Sort  (cost=4158.91..4158.91 rows=1 width=34) (actual time=23.862..23.862 rows=1 loops=8023)
+               Sort Key: p.created_at DESC, p.payment_id DESC
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=15163470
+               ->  Seq Scan on payment p  (cost=0.00..4158.90 rows=1 width=34) (actual time=23.273..23.809 rows=1 loops=8023)
+                     Filter: (order_id = o.order_id)
+                     Rows Removed by Filter: 181511
+                     Buffers: shared hit=15163470
+ Planning Time: 0.381 ms
+ Execution Time: 191707.580 ms
+(18 rows)
+
+===== run 3 =====
+                                                                       QUERY PLAN                                                                        
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Left Join  (cost=4159.33..32182147.92 rows=7736 width=53) (actual time=101.054..124396.810 rows=8023 loops=1)
+   Buffers: shared hit=15166419
+   ->  Index Scan using customer_order_pkey on customer_order o  (cost=0.42..8607.42 rows=7736 width=27) (actual time=84.310..120.459 rows=8023 loops=1)
+         Filter: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date))
+         Rows Removed by Filter: 191977
+         Buffers: shared hit=2949
+   ->  Limit  (cost=4158.91..4158.91 rows=1 width=34) (actual time=15.483..15.484 rows=1 loops=8023)
+         Buffers: shared hit=15163470
+         ->  Sort  (cost=4158.91..4158.91 rows=1 width=34) (actual time=15.478..15.478 rows=1 loops=8023)
+               Sort Key: p.created_at DESC, p.payment_id DESC
+               Sort Method: quicksort  Memory: 25kB
+               Buffers: shared hit=15163470
+               ->  Seq Scan on payment p  (cost=0.00..4158.90 rows=1 width=34) (actual time=15.157..15.444 rows=1 loops=8023)
+                     Filter: (order_id = o.order_id)
+                     Rows Removed by Filter: 181511
+                     Buffers: shared hit=15163470
+ Planning Time: 5.522 ms
+ Execution Time: 124403.662 ms
+(18 rows)
+

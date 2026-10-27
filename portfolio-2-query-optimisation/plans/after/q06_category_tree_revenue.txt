@@ -1,0 +1,240 @@
+===== run 1 =====
+                                                                                                      QUERY PLAN                                                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=29678.36..29698.36 rows=8000 width=61) (actual time=686.175..686.184 rows=8 loops=1)
+   Sort Key: (sum(l.line_total)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=66462 read=32, temp read=2213 written=2220
+   CTE tree
+     ->  Recursive Union  (cost=0.00..49.38 rows=328 width=8) (actual time=0.012..0.066 rows=40 loops=1)
+           Buffers: shared hit=3
+           ->  Seq Scan on category c  (cost=0.00..1.40 rows=8 width=8) (actual time=0.010..0.013 rows=8 loops=1)
+                 Filter: (parent_category_id IS NULL)
+                 Rows Removed by Filter: 32
+                 Buffers: shared hit=1
+           ->  Hash Join  (cost=2.60..4.47 rows=32 width=8) (actual time=0.016..0.021 rows=16 loops=2)
+                 Hash Cond: (c_1.parent_category_id = t_1.category_id)
+                 Buffers: shared hit=2
+                 ->  Seq Scan on category c_1  (cost=0.00..1.40 rows=40 width=8) (actual time=0.001..0.002 rows=40 loops=2)
+                       Buffers: shared hit=2
+                 ->  Hash  (cost=1.60..1.60 rows=80 width=8) (actual time=0.007..0.008 rows=20 loops=2)
+                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                       ->  WorkTable Scan on tree t_1  (cost=0.00..1.60 rows=80 width=8) (actual time=0.001..0.003 rows=20 loops=2)
+   ->  GroupAggregate  (cost=5545.46..29110.35 rows=8000 width=61) (actual time=156.896..686.146 rows=8 loops=1)
+         Group Key: t.root_id, root.name
+         Buffers: shared hit=66459 read=32, temp read=2213 written=2220
+         ->  Incremental Sort  (cost=5545.46..27025.34 rows=158801 width=27) (actual time=73.893..620.227 rows=440127 loops=1)
+               Sort Key: t.root_id, root.name, pc.product_id
+               Presorted Key: t.root_id
+               Full-sort Groups: 8  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+               Pre-sorted Groups: 8  Sort Method: external merge  Average Disk: 2527kB  Peak Disk: 2656kB
+               Buffers: shared hit=66459 read=32, temp read=2213 written=2220
+               ->  Nested Loop  (cost=5045.61..15547.25 rows=158801 width=27) (actual time=15.401..162.099 rows=440127 loops=1)
+                     Buffers: shared hit=66456 read=32
+                     ->  Merge Join  (cost=5045.19..5317.65 rows=7779 width=21) (actual time=15.356..21.850 rows=21560 loops=1)
+                           Merge Cond: (t.root_id = root.category_id)
+                           Buffers: shared hit=187 read=32
+                           ->  Sort  (cost=5042.73..5139.96 rows=38894 width=12) (actual time=15.333..17.724 rows=21560 loops=1)
+                                 Sort Key: t.root_id
+                                 Sort Method: quicksort  Memory: 1611kB
+                                 Buffers: shared hit=186 read=32
+                                 ->  Hash Join  (cost=1372.95..2077.59 rows=38894 width=12) (actual time=9.303..13.069 rows=21560 loops=1)
+                                       Hash Cond: (pc.product_id = v.product_id)
+                                       Buffers: shared hit=186 read=32
+                                       ->  HashAggregate  (cost=705.85..886.25 rows=18040 width=8) (actual time=5.110..6.109 rows=10000 loops=1)
+                                             Group Key: pc.product_id, t.root_id
+                                             Batches: 1  Memory Usage: 1297kB
+                                             Buffers: shared hit=4 read=32
+                                             ->  Merge Join  (cost=20.55..615.65 rows=18040 width=8) (actual time=0.335..3.252 rows=11000 loops=1)
+                                                   Merge Cond: (pc.category_id = t.category_id)
+                                                   Buffers: shared hit=4 read=32
+                                                   ->  Index Only Scan using ix_product_category_category on product_category pc  (cost=0.29..297.29 rows=11000 width=8) (actual time=0.199..1.361 rows=11000 loops=1)
+                                                         Heap Fetches: 0
+                                                         Buffers: shared hit=1 read=32
+                                                   ->  Sort  (cost=20.27..21.09 rows=328 width=8) (actual time=0.133..0.478 rows=10660 loops=1)
+                                                         Sort Key: t.category_id
+                                                         Sort Method: quicksort  Memory: 26kB
+                                                         Buffers: shared hit=3
+                                                         ->  CTE Scan on tree t  (cost=0.00..6.56 rows=328 width=8) (actual time=0.017..0.075 rows=40 loops=1)
+                                                               Buffers: shared hit=3
+                                       ->  Hash  (cost=397.60..397.60 rows=21560 width=8) (actual time=4.048..4.048 rows=21560 loops=1)
+                                             Buckets: 32768  Batches: 1  Memory Usage: 1099kB
+                                             Buffers: shared hit=182
+                                             ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=8) (actual time=0.050..2.179 rows=21560 loops=1)
+                                                   Buffers: shared hit=182
+                           ->  Sort  (cost=2.46..2.56 rows=40 width=13) (actual time=0.021..0.025 rows=36 loops=1)
+                                 Sort Key: root.category_id
+                                 Sort Method: quicksort  Memory: 26kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on category root  (cost=0.00..1.40 rows=40 width=13) (actual time=0.010..0.013 rows=40 loops=1)
+                                       Buffers: shared hit=1
+                     ->  Index Only Scan using ix_order_line_variant on order_line l  (cost=0.42..1.11 rows=21 width=14) (actual time=0.003..0.004 rows=20 loops=21560)
+                           Index Cond: (variant_id = v.variant_id)
+                           Heap Fetches: 0
+                           Buffers: shared hit=66269
+ Planning:
+   Buffers: shared hit=283 read=2
+ Planning Time: 7.106 ms
+ Execution Time: 700.522 ms
+(75 rows)
+
+===== run 2 =====
+                                                                                                      QUERY PLAN                                                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=29678.36..29698.36 rows=8000 width=61) (actual time=625.169..625.178 rows=8 loops=1)
+   Sort Key: (sum(l.line_total)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=66488, temp read=2213 written=2220
+   CTE tree
+     ->  Recursive Union  (cost=0.00..49.38 rows=328 width=8) (actual time=0.009..0.065 rows=40 loops=1)
+           Buffers: shared hit=3
+           ->  Seq Scan on category c  (cost=0.00..1.40 rows=8 width=8) (actual time=0.008..0.011 rows=8 loops=1)
+                 Filter: (parent_category_id IS NULL)
+                 Rows Removed by Filter: 32
+                 Buffers: shared hit=1
+           ->  Hash Join  (cost=2.60..4.47 rows=32 width=8) (actual time=0.015..0.021 rows=16 loops=2)
+                 Hash Cond: (c_1.parent_category_id = t_1.category_id)
+                 Buffers: shared hit=2
+                 ->  Seq Scan on category c_1  (cost=0.00..1.40 rows=40 width=8) (actual time=0.002..0.004 rows=40 loops=2)
+                       Buffers: shared hit=2
+                 ->  Hash  (cost=1.60..1.60 rows=80 width=8) (actual time=0.008..0.008 rows=20 loops=2)
+                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                       ->  WorkTable Scan on tree t_1  (cost=0.00..1.60 rows=80 width=8) (actual time=0.001..0.003 rows=20 loops=2)
+   ->  GroupAggregate  (cost=5545.46..29110.35 rows=8000 width=61) (actual time=176.847..625.150 rows=8 loops=1)
+         Group Key: t.root_id, root.name
+         Buffers: shared hit=66488, temp read=2213 written=2220
+         ->  Incremental Sort  (cost=5545.46..27025.34 rows=158801 width=27) (actual time=80.075..559.713 rows=440127 loops=1)
+               Sort Key: t.root_id, root.name, pc.product_id
+               Presorted Key: t.root_id
+               Full-sort Groups: 8  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+               Pre-sorted Groups: 8  Sort Method: external merge  Average Disk: 2527kB  Peak Disk: 2656kB
+               Buffers: shared hit=66488, temp read=2213 written=2220
+               ->  Nested Loop  (cost=5045.61..15547.25 rows=158801 width=27) (actual time=18.743..122.600 rows=440127 loops=1)
+                     Buffers: shared hit=66488
+                     ->  Merge Join  (cost=5045.19..5317.65 rows=7779 width=21) (actual time=18.731..24.334 rows=21560 loops=1)
+                           Merge Cond: (t.root_id = root.category_id)
+                           Buffers: shared hit=219
+                           ->  Sort  (cost=5042.73..5139.96 rows=38894 width=12) (actual time=18.706..21.022 rows=21560 loops=1)
+                                 Sort Key: t.root_id
+                                 Sort Method: quicksort  Memory: 1611kB
+                                 Buffers: shared hit=218
+                                 ->  Hash Join  (cost=1372.95..2077.59 rows=38894 width=12) (actual time=10.328..15.629 rows=21560 loops=1)
+                                       Hash Cond: (pc.product_id = v.product_id)
+                                       Buffers: shared hit=218
+                                       ->  HashAggregate  (cost=705.85..886.25 rows=18040 width=8) (actual time=6.789..8.253 rows=10000 loops=1)
+                                             Group Key: pc.product_id, t.root_id
+                                             Batches: 1  Memory Usage: 1297kB
+                                             Buffers: shared hit=36
+                                             ->  Merge Join  (cost=20.55..615.65 rows=18040 width=8) (actual time=0.112..4.218 rows=11000 loops=1)
+                                                   Merge Cond: (pc.category_id = t.category_id)
+                                                   Buffers: shared hit=36
+                                                   ->  Index Only Scan using ix_product_category_category on product_category pc  (cost=0.29..297.29 rows=11000 width=8) (actual time=0.021..1.147 rows=11000 loops=1)
+                                                         Heap Fetches: 0
+                                                         Buffers: shared hit=33
+                                                   ->  Sort  (cost=20.27..21.09 rows=328 width=8) (actual time=0.088..0.675 rows=10660 loops=1)
+                                                         Sort Key: t.category_id
+                                                         Sort Method: quicksort  Memory: 26kB
+                                                         Buffers: shared hit=3
+                                                         ->  CTE Scan on tree t  (cost=0.00..6.56 rows=328 width=8) (actual time=0.010..0.070 rows=40 loops=1)
+                                                               Buffers: shared hit=3
+                                       ->  Hash  (cost=397.60..397.60 rows=21560 width=8) (actual time=3.448..3.449 rows=21560 loops=1)
+                                             Buckets: 32768  Batches: 1  Memory Usage: 1099kB
+                                             Buffers: shared hit=182
+                                             ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=8) (actual time=0.009..1.554 rows=21560 loops=1)
+                                                   Buffers: shared hit=182
+                           ->  Sort  (cost=2.46..2.56 rows=40 width=13) (actual time=0.023..0.028 rows=36 loops=1)
+                                 Sort Key: root.category_id
+                                 Sort Method: quicksort  Memory: 26kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on category root  (cost=0.00..1.40 rows=40 width=13) (actual time=0.010..0.014 rows=40 loops=1)
+                                       Buffers: shared hit=1
+                     ->  Index Only Scan using ix_order_line_variant on order_line l  (cost=0.42..1.11 rows=21 width=14) (actual time=0.002..0.003 rows=20 loops=21560)
+                           Index Cond: (variant_id = v.variant_id)
+                           Heap Fetches: 0
+                           Buffers: shared hit=66269
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.336 ms
+ Execution Time: 642.898 ms
+(75 rows)
+
+===== run 3 =====
+                                                                                                      QUERY PLAN                                                                                                       
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=29678.36..29698.36 rows=8000 width=61) (actual time=748.597..748.607 rows=8 loops=1)
+   Sort Key: (sum(l.line_total)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=66488, temp read=2213 written=2220
+   CTE tree
+     ->  Recursive Union  (cost=0.00..49.38 rows=328 width=8) (actual time=0.008..0.049 rows=40 loops=1)
+           Buffers: shared hit=3
+           ->  Seq Scan on category c  (cost=0.00..1.40 rows=8 width=8) (actual time=0.008..0.010 rows=8 loops=1)
+                 Filter: (parent_category_id IS NULL)
+                 Rows Removed by Filter: 32
+                 Buffers: shared hit=1
+           ->  Hash Join  (cost=2.60..4.47 rows=32 width=8) (actual time=0.011..0.015 rows=16 loops=2)
+                 Hash Cond: (c_1.parent_category_id = t_1.category_id)
+                 Buffers: shared hit=2
+                 ->  Seq Scan on category c_1  (cost=0.00..1.40 rows=40 width=8) (actual time=0.001..0.003 rows=40 loops=2)
+                       Buffers: shared hit=2
+                 ->  Hash  (cost=1.60..1.60 rows=80 width=8) (actual time=0.005..0.005 rows=20 loops=2)
+                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                       ->  WorkTable Scan on tree t_1  (cost=0.00..1.60 rows=80 width=8) (actual time=0.001..0.002 rows=20 loops=2)
+   ->  GroupAggregate  (cost=5545.46..29110.35 rows=8000 width=61) (actual time=137.587..748.569 rows=8 loops=1)
+         Group Key: t.root_id, root.name
+         Buffers: shared hit=66488, temp read=2213 written=2220
+         ->  Incremental Sort  (cost=5545.46..27025.34 rows=158801 width=27) (actual time=64.495..655.492 rows=440127 loops=1)
+               Sort Key: t.root_id, root.name, pc.product_id
+               Presorted Key: t.root_id
+               Full-sort Groups: 8  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+               Pre-sorted Groups: 8  Sort Method: external merge  Average Disk: 2527kB  Peak Disk: 2656kB
+               Buffers: shared hit=66488, temp read=2213 written=2220
+               ->  Nested Loop  (cost=5045.61..15547.25 rows=158801 width=27) (actual time=12.857..133.722 rows=440127 loops=1)
+                     Buffers: shared hit=66488
+                     ->  Merge Join  (cost=5045.19..5317.65 rows=7779 width=21) (actual time=12.836..19.125 rows=21560 loops=1)
+                           Merge Cond: (t.root_id = root.category_id)
+                           Buffers: shared hit=219
+                           ->  Sort  (cost=5042.73..5139.96 rows=38894 width=12) (actual time=12.757..15.181 rows=21560 loops=1)
+                                 Sort Key: t.root_id
+                                 Sort Method: quicksort  Memory: 1611kB
+                                 Buffers: shared hit=218
+                                 ->  Hash Join  (cost=1372.95..2077.59 rows=38894 width=12) (actual time=6.872..10.455 rows=21560 loops=1)
+                                       Hash Cond: (pc.product_id = v.product_id)
+                                       Buffers: shared hit=218
+                                       ->  HashAggregate  (cost=705.85..886.25 rows=18040 width=8) (actual time=3.847..4.783 rows=10000 loops=1)
+                                             Group Key: pc.product_id, t.root_id
+                                             Batches: 1  Memory Usage: 1297kB
+                                             Buffers: shared hit=36
+                                             ->  Merge Join  (cost=20.55..615.65 rows=18040 width=8) (actual time=0.083..2.318 rows=11000 loops=1)
+                                                   Merge Cond: (pc.category_id = t.category_id)
+                                                   Buffers: shared hit=36
+                                                   ->  Index Only Scan using ix_product_category_category on product_category pc  (cost=0.29..297.29 rows=11000 width=8) (actual time=0.015..0.625 rows=11000 loops=1)
+                                                         Heap Fetches: 0
+                                                         Buffers: shared hit=33
+                                                   ->  Sort  (cost=20.27..21.09 rows=328 width=8) (actual time=0.065..0.372 rows=10660 loops=1)
+                                                         Sort Key: t.category_id
+                                                         Sort Method: quicksort  Memory: 26kB
+                                                         Buffers: shared hit=3
+                                                         ->  CTE Scan on tree t  (cost=0.00..6.56 rows=328 width=8) (actual time=0.010..0.055 rows=40 loops=1)
+                                                               Buffers: shared hit=3
+                                       ->  Hash  (cost=397.60..397.60 rows=21560 width=8) (actual time=2.934..2.935 rows=21560 loops=1)
+                                             Buckets: 32768  Batches: 1  Memory Usage: 1099kB
+                                             Buffers: shared hit=182
+                                             ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=8) (actual time=0.010..1.287 rows=21560 loops=1)
+                                                   Buffers: shared hit=182
+                           ->  Sort  (cost=2.46..2.56 rows=40 width=13) (actual time=0.074..0.078 rows=36 loops=1)
+                                 Sort Key: root.category_id
+                                 Sort Method: quicksort  Memory: 26kB
+                                 Buffers: shared hit=1
+                                 ->  Seq Scan on category root  (cost=0.00..1.40 rows=40 width=13) (actual time=0.038..0.053 rows=40 loops=1)
+                                       Buffers: shared hit=1
+                     ->  Index Only Scan using ix_order_line_variant on order_line l  (cost=0.42..1.11 rows=21 width=14) (actual time=0.002..0.003 rows=20 loops=21560)
+                           Index Cond: (variant_id = v.variant_id)
+                           Heap Fetches: 0
+                           Buffers: shared hit=66269
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.347 ms
+ Execution Time: 765.306 ms
+(75 rows)
+

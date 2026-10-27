@@ -1,0 +1,153 @@
+===== run 1 =====
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2687.36..2687.42 rows=25 width=110) (actual time=27.220..27.228 rows=25 loops=1)
+   Buffers: shared hit=526 read=62
+   ->  Sort  (cost=2687.36..2704.73 rows=6951 width=110) (actual time=27.216..27.221 rows=25 loops=1)
+         Sort Key: (CASE WHEN (COALESCE(vel.units_sold, '0'::bigint) = 0) THEN NULL::numeric ELSE round(((sl.quantity)::numeric / ((vel.units_sold)::numeric / 90.0)), 0) END), v.sku
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=526 read=62
+         ->  Hash Left Join  (cost=1844.10..2491.20 rows=6951 width=110) (actual time=15.042..26.000 rows=6951 loops=1)
+               Hash Cond: (sl.variant_id = vel.variant_id)
+               Buffers: shared hit=520 read=62
+               ->  Hash Join  (cost=995.84..1468.30 rows=6951 width=42) (actual time=8.460..15.328 rows=6951 loops=1)
+                     Hash Cond: (v.product_id = p.product_id)
+                     Buffers: shared hit=516
+                     ->  Hash Join  (cost=615.84..1070.04 rows=6951 width=24) (actual time=4.130..9.720 rows=6951 loops=1)
+                           Hash Cond: (v.variant_id = sl.variant_id)
+                           Buffers: shared hit=361
+                           ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=20) (actual time=0.029..2.039 rows=21560 loops=1)
+                                 Buffers: shared hit=182
+                           ->  Hash  (cost=528.95..528.95 rows=6951 width=8) (actual time=4.052..4.053 rows=6951 loops=1)
+                                 Buckets: 8192  Batches: 1  Memory Usage: 336kB
+                                 Buffers: shared hit=179
+                                 ->  Seq Scan on stock_level sl  (cost=0.00..528.95 rows=6951 width=8) (actual time=0.020..3.367 rows=6951 loops=1)
+                                       Filter: (warehouse_id = 1)
+                                       Rows Removed by Filter: 21045
+                                       Buffers: shared hit=179
+                     ->  Hash  (cost=255.00..255.00 rows=10000 width=26) (actual time=4.230..4.230 rows=10000 loops=1)
+                           Buckets: 16384  Batches: 1  Memory Usage: 715kB
+                           Buffers: shared hit=155
+                           ->  Seq Scan on product p  (cost=0.00..255.00 rows=10000 width=26) (actual time=0.068..2.814 rows=10000 loops=1)
+                                 Buffers: shared hit=155
+               ->  Hash  (cost=738.22..738.22 rows=8803 width=12) (actual time=6.495..6.496 rows=4796 loops=1)
+                     Buckets: 16384  Batches: 1  Memory Usage: 335kB
+                     Buffers: shared hit=4 read=62
+                     ->  Subquery Scan on vel  (cost=562.16..738.22 rows=8803 width=12) (actual time=5.196..5.983 rows=4796 loops=1)
+                           Buffers: shared hit=4 read=62
+                           ->  HashAggregate  (cost=562.16..650.19 rows=8803 width=12) (actual time=5.191..5.683 rows=4796 loops=1)
+                                 Group Key: m.variant_id
+                                 Batches: 1  Memory Usage: 913kB
+                                 Buffers: shared hit=4 read=62
+                                 ->  Index Only Scan using ix_stock_movement_sales on stock_movement m  (cost=0.42..477.73 rows=11258 width=8) (actual time=0.282..3.017 rows=12032 loops=1)
+                                       Index Cond: ((warehouse_id = 1) AND (created_at >= '2026-07-22'::date) AND (created_at < '2026-10-20'::date))
+                                       Heap Fetches: 0
+                                       Buffers: shared hit=4 read=62
+ Planning:
+   Buffers: shared hit=304 read=1
+ Planning Time: 5.238 ms
+ Execution Time: 27.921 ms
+(46 rows)
+
+===== run 2 =====
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2687.36..2687.42 rows=25 width=110) (actual time=16.495..16.500 rows=25 loops=1)
+   Buffers: shared hit=579
+   ->  Sort  (cost=2687.36..2704.73 rows=6951 width=110) (actual time=16.494..16.498 rows=25 loops=1)
+         Sort Key: (CASE WHEN (COALESCE(vel.units_sold, '0'::bigint) = 0) THEN NULL::numeric ELSE round(((sl.quantity)::numeric / ((vel.units_sold)::numeric / 90.0)), 0) END), v.sku
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=579
+         ->  Hash Left Join  (cost=1844.10..2491.20 rows=6951 width=110) (actual time=7.364..15.392 rows=6951 loops=1)
+               Hash Cond: (sl.variant_id = vel.variant_id)
+               Buffers: shared hit=579
+               ->  Hash Join  (cost=995.84..1468.30 rows=6951 width=42) (actual time=3.649..7.989 rows=6951 loops=1)
+                     Hash Cond: (v.product_id = p.product_id)
+                     Buffers: shared hit=516
+                     ->  Hash Join  (cost=615.84..1070.04 rows=6951 width=24) (actual time=1.912..5.191 rows=6951 loops=1)
+                           Hash Cond: (v.variant_id = sl.variant_id)
+                           Buffers: shared hit=361
+                           ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=20) (actual time=0.008..0.930 rows=21560 loops=1)
+                                 Buffers: shared hit=182
+                           ->  Hash  (cost=528.95..528.95 rows=6951 width=8) (actual time=1.871..1.871 rows=6951 loops=1)
+                                 Buckets: 8192  Batches: 1  Memory Usage: 336kB
+                                 Buffers: shared hit=179
+                                 ->  Seq Scan on stock_level sl  (cost=0.00..528.95 rows=6951 width=8) (actual time=0.005..1.389 rows=6951 loops=1)
+                                       Filter: (warehouse_id = 1)
+                                       Rows Removed by Filter: 21045
+                                       Buffers: shared hit=179
+                     ->  Hash  (cost=255.00..255.00 rows=10000 width=26) (actual time=1.690..1.691 rows=10000 loops=1)
+                           Buckets: 16384  Batches: 1  Memory Usage: 715kB
+                           Buffers: shared hit=155
+                           ->  Seq Scan on product p  (cost=0.00..255.00 rows=10000 width=26) (actual time=0.017..0.763 rows=10000 loops=1)
+                                 Buffers: shared hit=155
+               ->  Hash  (cost=738.22..738.22 rows=8803 width=12) (actual time=3.663..3.663 rows=4796 loops=1)
+                     Buckets: 16384  Batches: 1  Memory Usage: 335kB
+                     Buffers: shared hit=63
+                     ->  Subquery Scan on vel  (cost=562.16..738.22 rows=8803 width=12) (actual time=2.653..3.281 rows=4796 loops=1)
+                           Buffers: shared hit=63
+                           ->  HashAggregate  (cost=562.16..650.19 rows=8803 width=12) (actual time=2.652..3.037 rows=4796 loops=1)
+                                 Group Key: m.variant_id
+                                 Batches: 1  Memory Usage: 913kB
+                                 Buffers: shared hit=63
+                                 ->  Index Only Scan using ix_stock_movement_sales on stock_movement m  (cost=0.42..477.73 rows=11258 width=8) (actual time=0.025..1.251 rows=12032 loops=1)
+                                       Index Cond: ((warehouse_id = 1) AND (created_at >= '2026-07-22'::date) AND (created_at < '2026-10-20'::date))
+                                       Heap Fetches: 0
+                                       Buffers: shared hit=63
+ Planning:
+   Buffers: shared hit=18
+ Planning Time: 0.547 ms
+ Execution Time: 16.908 ms
+(46 rows)
+
+===== run 3 =====
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2687.36..2687.42 rows=25 width=110) (actual time=17.044..17.050 rows=25 loops=1)
+   Buffers: shared hit=579
+   ->  Sort  (cost=2687.36..2704.73 rows=6951 width=110) (actual time=17.043..17.047 rows=25 loops=1)
+         Sort Key: (CASE WHEN (COALESCE(vel.units_sold, '0'::bigint) = 0) THEN NULL::numeric ELSE round(((sl.quantity)::numeric / ((vel.units_sold)::numeric / 90.0)), 0) END), v.sku
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=579
+         ->  Hash Left Join  (cost=1844.10..2491.20 rows=6951 width=110) (actual time=7.736..15.932 rows=6951 loops=1)
+               Hash Cond: (sl.variant_id = vel.variant_id)
+               Buffers: shared hit=579
+               ->  Hash Join  (cost=995.84..1468.30 rows=6951 width=42) (actual time=3.960..8.469 rows=6951 loops=1)
+                     Hash Cond: (v.product_id = p.product_id)
+                     Buffers: shared hit=516
+                     ->  Hash Join  (cost=615.84..1070.04 rows=6951 width=24) (actual time=2.248..5.622 rows=6951 loops=1)
+                           Hash Cond: (v.variant_id = sl.variant_id)
+                           Buffers: shared hit=361
+                           ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=20) (actual time=0.007..0.890 rows=21560 loops=1)
+                                 Buffers: shared hit=182
+                           ->  Hash  (cost=528.95..528.95 rows=6951 width=8) (actual time=2.208..2.209 rows=6951 loops=1)
+                                 Buckets: 8192  Batches: 1  Memory Usage: 336kB
+                                 Buffers: shared hit=179
+                                 ->  Seq Scan on stock_level sl  (cost=0.00..528.95 rows=6951 width=8) (actual time=0.006..1.604 rows=6951 loops=1)
+                                       Filter: (warehouse_id = 1)
+                                       Rows Removed by Filter: 21045
+                                       Buffers: shared hit=179
+                     ->  Hash  (cost=255.00..255.00 rows=10000 width=26) (actual time=1.662..1.662 rows=10000 loops=1)
+                           Buckets: 16384  Batches: 1  Memory Usage: 715kB
+                           Buffers: shared hit=155
+                           ->  Seq Scan on product p  (cost=0.00..255.00 rows=10000 width=26) (actual time=0.009..0.727 rows=10000 loops=1)
+                                 Buffers: shared hit=155
+               ->  Hash  (cost=738.22..738.22 rows=8803 width=12) (actual time=3.708..3.710 rows=4796 loops=1)
+                     Buckets: 16384  Batches: 1  Memory Usage: 335kB
+                     Buffers: shared hit=63
+                     ->  Subquery Scan on vel  (cost=562.16..738.22 rows=8803 width=12) (actual time=2.655..3.325 rows=4796 loops=1)
+                           Buffers: shared hit=63
+                           ->  HashAggregate  (cost=562.16..650.19 rows=8803 width=12) (actual time=2.655..3.074 rows=4796 loops=1)
+                                 Group Key: m.variant_id
+                                 Batches: 1  Memory Usage: 913kB
+                                 Buffers: shared hit=63
+                                 ->  Index Only Scan using ix_stock_movement_sales on stock_movement m  (cost=0.42..477.73 rows=11258 width=8) (actual time=0.035..1.244 rows=12032 loops=1)
+                                       Index Cond: ((warehouse_id = 1) AND (created_at >= '2026-07-22'::date) AND (created_at < '2026-10-20'::date))
+                                       Heap Fetches: 0
+                                       Buffers: shared hit=63
+ Planning:
+   Buffers: shared hit=18
+ Planning Time: 0.410 ms
+ Execution Time: 17.405 ms
+(46 rows)
+

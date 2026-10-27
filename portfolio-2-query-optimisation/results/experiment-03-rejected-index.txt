@@ -1,0 +1,27 @@
+=== candidate had no effect: still a Seq Scan ===
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=5848.91..5848.92 rows=5 width=85) (actual time=50.635..50.636 rows=5 loops=1)
+   Sort Key: (round(((100.0 * (count(*) FILTER (WHERE ((delivered_at - dispatched_at) <= '5 days'::interval)))::numeric) / (count(*))::numeric), 1)) DESC, carrier
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1726
+   ->  HashAggregate  (cost=5848.71..5848.85 rows=5 width=85) (actual time=50.603..50.612 rows=5 loops=1)
+         Group Key: carrier
+         Batches: 1  Memory Usage: 24kB
+         Buffers: shared hit=1723
+         ->  Seq Scan on shipment s  (cost=0.00..4199.49 rows=73299 width=21) (actual time=7.904..20.473 rows=73041 loops=1)
+               Filter: ((dispatched_at >= '2025-10-20'::date) AND ((status)::text = 'delivered'::text))
+               Rows Removed by Filter: 92058
+               Buffers: shared hit=1723
+ Planning:
+   Buffers: shared hit=62 read=1
+ Planning Time: 1.078 ms
+ Execution Time: 50.689 ms
+(16 rows)
+
+=== cost of the candidate: a third of the heap, but 90% of its rows are needed ===
+ heap_size | index_size 
+-----------+------------
+ 13 MB     | 6192 kB
+(1 row)
+

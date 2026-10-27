@@ -1,0 +1,99 @@
+===== run 1 =====
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=31659.84..31660.09 rows=100 width=107) (actual time=229.087..229.099 rows=100 loops=1)
+   Buffers: shared hit=1955
+   ->  Sort  (cost=31659.84..32110.32 rows=180193 width=107) (actual time=229.084..229.089 rows=100 loops=1)
+         Sort Key: (sum(o.grand_total)) DESC
+         Sort Method: top-N heapsort  Memory: 48kB
+         Buffers: shared hit=1955
+         ->  GroupAggregate  (cost=1.01..24772.99 rows=180193 width=107) (actual time=0.152..216.361 rows=48593 loops=1)
+               Group Key: o.customer_id, c.email
+               Buffers: shared hit=1952
+               ->  Incremental Sort  (cost=1.01..18015.75 rows=180193 width=41) (actual time=0.105..127.813 rows=179983 loops=1)
+                     Sort Key: o.customer_id, c.email
+                     Presorted Key: o.customer_id
+                     Full-sort Groups: 5321  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+                     Buffers: shared hit=1952
+                     ->  Merge Join  (cost=0.71..13096.97 rows=180193 width=41) (actual time=0.055..89.568 rows=179983 loops=1)
+                           Merge Cond: (o.customer_id = c.customer_id)
+                           Buffers: shared hit=1949
+                           ->  Index Only Scan using ix_order_customer on customer_order o  (cost=0.42..8792.42 rows=180193 width=18) (actual time=0.015..47.334 rows=179983 loops=1)
+                                 Filter: ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[]))
+                                 Rows Removed by Filter: 20017
+                                 Heap Fetches: 0
+                                 Buffers: shared hit=1193
+                           ->  Index Scan using customer_pkey on customer c  (cost=0.29..1927.29 rows=50000 width=27) (actual time=0.037..11.488 rows=50000 loops=1)
+                                 Buffers: shared hit=756
+ Planning:
+   Buffers: shared hit=283
+ Planning Time: 6.957 ms
+ Execution Time: 229.200 ms
+(28 rows)
+
+===== run 2 =====
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=31659.84..31660.09 rows=100 width=107) (actual time=198.017..198.033 rows=100 loops=1)
+   Buffers: shared hit=1949
+   ->  Sort  (cost=31659.84..32110.32 rows=180193 width=107) (actual time=198.016..198.021 rows=100 loops=1)
+         Sort Key: (sum(o.grand_total)) DESC
+         Sort Method: top-N heapsort  Memory: 48kB
+         Buffers: shared hit=1949
+         ->  GroupAggregate  (cost=1.01..24772.99 rows=180193 width=107) (actual time=0.062..186.716 rows=48593 loops=1)
+               Group Key: o.customer_id, c.email
+               Buffers: shared hit=1949
+               ->  Incremental Sort  (cost=1.01..18015.75 rows=180193 width=41) (actual time=0.052..105.239 rows=179983 loops=1)
+                     Sort Key: o.customer_id, c.email
+                     Presorted Key: o.customer_id
+                     Full-sort Groups: 5321  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+                     Buffers: shared hit=1949
+                     ->  Merge Join  (cost=0.71..13096.97 rows=180193 width=41) (actual time=0.024..70.855 rows=179983 loops=1)
+                           Merge Cond: (o.customer_id = c.customer_id)
+                           Buffers: shared hit=1949
+                           ->  Index Only Scan using ix_order_customer on customer_order o  (cost=0.42..8792.42 rows=180193 width=18) (actual time=0.012..36.920 rows=179983 loops=1)
+                                 Filter: ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[]))
+                                 Rows Removed by Filter: 20017
+                                 Heap Fetches: 0
+                                 Buffers: shared hit=1193
+                           ->  Index Scan using customer_pkey on customer c  (cost=0.29..1927.29 rows=50000 width=27) (actual time=0.010..6.038 rows=50000 loops=1)
+                                 Buffers: shared hit=756
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.236 ms
+ Execution Time: 198.078 ms
+(28 rows)
+
+===== run 3 =====
+                                                                                      QUERY PLAN                                                                                      
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=31659.84..31660.09 rows=100 width=107) (actual time=195.664..195.675 rows=100 loops=1)
+   Buffers: shared hit=1949
+   ->  Sort  (cost=31659.84..32110.32 rows=180193 width=107) (actual time=195.663..195.668 rows=100 loops=1)
+         Sort Key: (sum(o.grand_total)) DESC
+         Sort Method: top-N heapsort  Memory: 48kB
+         Buffers: shared hit=1949
+         ->  GroupAggregate  (cost=1.01..24772.99 rows=180193 width=107) (actual time=0.059..184.407 rows=48593 loops=1)
+               Group Key: o.customer_id, c.email
+               Buffers: shared hit=1949
+               ->  Incremental Sort  (cost=1.01..18015.75 rows=180193 width=41) (actual time=0.049..104.015 rows=179983 loops=1)
+                     Sort Key: o.customer_id, c.email
+                     Presorted Key: o.customer_id
+                     Full-sort Groups: 5321  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+                     Buffers: shared hit=1949
+                     ->  Merge Join  (cost=0.71..13096.97 rows=180193 width=41) (actual time=0.025..70.298 rows=179983 loops=1)
+                           Merge Cond: (o.customer_id = c.customer_id)
+                           Buffers: shared hit=1949
+                           ->  Index Only Scan using ix_order_customer on customer_order o  (cost=0.42..8792.42 rows=180193 width=18) (actual time=0.013..36.773 rows=179983 loops=1)
+                                 Filter: ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[]))
+                                 Rows Removed by Filter: 20017
+                                 Heap Fetches: 0
+                                 Buffers: shared hit=1193
+                           ->  Index Scan using customer_pkey on customer c  (cost=0.29..1927.29 rows=50000 width=27) (actual time=0.010..6.102 rows=50000 loops=1)
+                                 Buffers: shared hit=756
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.237 ms
+ Execution Time: 195.716 ms
+(28 rows)
+

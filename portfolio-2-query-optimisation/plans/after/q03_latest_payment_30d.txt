@@ -1,0 +1,84 @@
+===== run 1 =====
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=68412.73..68432.59 rows=7943 width=53) (actual time=31.583..31.912 rows=8023 loops=1)
+   Sort Key: o.order_id
+   Sort Method: quicksort  Memory: 841kB
+   Buffers: shared hit=31491
+   ->  Nested Loop Left Join  (cost=8.87..67898.21 rows=7943 width=53) (actual time=0.200..29.002 rows=8023 loops=1)
+         Buffers: shared hit=31488
+         ->  Index Scan using ix_order_date on customer_order o  (cost=0.42..442.28 rows=7943 width=27) (actual time=0.045..2.743 rows=8023 loops=1)
+               Index Cond: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date))
+               Buffers: shared hit=149
+         ->  Limit  (cost=8.45..8.47 rows=1 width=34) (actual time=0.003..0.003 rows=1 loops=8023)
+               Buffers: shared hit=31339
+               ->  Incremental Sort  (cost=8.45..8.49 rows=2 width=34) (actual time=0.002..0.002 rows=1 loops=8023)
+                     Sort Key: p.created_at DESC, p.payment_id DESC
+                     Presorted Key: p.created_at
+                     Full-sort Groups: 8023  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                     Buffers: shared hit=31339
+                     ->  Index Scan using ix_payment_order_recent on payment p  (cost=0.42..8.44 rows=1 width=34) (actual time=0.002..0.002 rows=1 loops=8023)
+                           Index Cond: (order_id = o.order_id)
+                           Buffers: shared hit=31333
+ Planning:
+   Buffers: shared hit=203 read=2
+ Planning Time: 5.486 ms
+ Execution Time: 32.373 ms
+(23 rows)
+
+===== run 2 =====
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=68412.73..68432.59 rows=7943 width=53) (actual time=21.721..21.967 rows=8023 loops=1)
+   Sort Key: o.order_id
+   Sort Method: quicksort  Memory: 841kB
+   Buffers: shared hit=31479
+   ->  Nested Loop Left Join  (cost=8.87..67898.21 rows=7943 width=53) (actual time=0.050..19.792 rows=8023 loops=1)
+         Buffers: shared hit=31479
+         ->  Index Scan using ix_order_date on customer_order o  (cost=0.42..442.28 rows=7943 width=27) (actual time=0.020..1.578 rows=8023 loops=1)
+               Index Cond: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date))
+               Buffers: shared hit=146
+         ->  Limit  (cost=8.45..8.47 rows=1 width=34) (actual time=0.002..0.002 rows=1 loops=8023)
+               Buffers: shared hit=31333
+               ->  Incremental Sort  (cost=8.45..8.49 rows=2 width=34) (actual time=0.002..0.002 rows=1 loops=8023)
+                     Sort Key: p.created_at DESC, p.payment_id DESC
+                     Presorted Key: p.created_at
+                     Full-sort Groups: 8023  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                     Buffers: shared hit=31333
+                     ->  Index Scan using ix_payment_order_recent on payment p  (cost=0.42..8.44 rows=1 width=34) (actual time=0.001..0.001 rows=1 loops=8023)
+                           Index Cond: (order_id = o.order_id)
+                           Buffers: shared hit=31333
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.270 ms
+ Execution Time: 22.309 ms
+(23 rows)
+
+===== run 3 =====
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=68412.73..68432.59 rows=7943 width=53) (actual time=26.157..26.591 rows=8023 loops=1)
+   Sort Key: o.order_id
+   Sort Method: quicksort  Memory: 841kB
+   Buffers: shared hit=31479
+   ->  Nested Loop Left Join  (cost=8.87..67898.21 rows=7943 width=53) (actual time=0.026..23.999 rows=8023 loops=1)
+         Buffers: shared hit=31479
+         ->  Index Scan using ix_order_date on customer_order o  (cost=0.42..442.28 rows=7943 width=27) (actual time=0.011..1.922 rows=8023 loops=1)
+               Index Cond: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date))
+               Buffers: shared hit=146
+         ->  Limit  (cost=8.45..8.47 rows=1 width=34) (actual time=0.002..0.002 rows=1 loops=8023)
+               Buffers: shared hit=31333
+               ->  Incremental Sort  (cost=8.45..8.49 rows=2 width=34) (actual time=0.002..0.002 rows=1 loops=8023)
+                     Sort Key: p.created_at DESC, p.payment_id DESC
+                     Presorted Key: p.created_at
+                     Full-sort Groups: 8023  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                     Buffers: shared hit=31333
+                     ->  Index Scan using ix_payment_order_recent on payment p  (cost=0.42..8.44 rows=1 width=34) (actual time=0.001..0.001 rows=1 loops=8023)
+                           Index Cond: (order_id = o.order_id)
+                           Buffers: shared hit=31333
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.227 ms
+ Execution Time: 27.114 ms
+(23 rows)
+

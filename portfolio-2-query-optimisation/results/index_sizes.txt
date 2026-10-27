@@ -1,0 +1,15 @@
+          index_name          | index_size | table_size 
+------------------------------+------------+------------
+ ix_stock_movement_sales      | 15 MB      | 27 MB
+ ix_order_line_variant        | 13 MB      | 25 MB
+ ix_order_customer            | 9584 kB    | 19 MB
+ ix_order_date                | 9240 kB    | 19 MB
+ ix_payment_order_recent      | 7208 kB    | 15 MB
+ ix_product_category_category | 264 kB     | 392 kB
+(6 rows)
+
+ database_size 
+---------------
+ 261 MB
+(1 row)
+

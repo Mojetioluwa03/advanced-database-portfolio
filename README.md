@@ -75,7 +75,7 @@ advanced-database-portfolio/
 | # | Component | Status | Evidence |
 |---|---|---|---|
 | 1 | Database Design and Modelling (7) | In progress | `portfolio-1-database-design/` |
-| 2 | Query Processing and Optimisation (7) | Not started | — |
+| 2 | Query Processing and Optimisation (7) | Complete | `portfolio-2-query-optimisation/` |
 | 3 | Transactions and Concurrency (7) | Not started | — |
 | 4 | NoSQL and Advanced Data Models (7) | Not started | — |
 | 5 | Distributed and Cloud Database Exercise (6) | Not started | — |

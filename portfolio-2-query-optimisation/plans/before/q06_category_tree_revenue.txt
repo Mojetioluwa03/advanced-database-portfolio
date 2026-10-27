@@ -1,0 +1,219 @@
+===== run 1 =====
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=33272.54..33292.54 rows=8000 width=61) (actual time=1627.943..1627.958 rows=8 loops=1)
+   Sort Key: (sum(l.line_total)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=3481, temp read=2211 written=2220
+   CTE tree
+     ->  Recursive Union  (cost=0.00..49.38 rows=328 width=8) (actual time=0.006..0.193 rows=40 loops=1)
+           Buffers: shared hit=3
+           ->  Seq Scan on category c  (cost=0.00..1.40 rows=8 width=8) (actual time=0.004..0.010 rows=8 loops=1)
+                 Filter: (parent_category_id IS NULL)
+                 Rows Removed by Filter: 32
+                 Buffers: shared hit=1
+           ->  Hash Join  (cost=2.60..4.47 rows=32 width=8) (actual time=0.044..0.065 rows=16 loops=2)
+                 Hash Cond: (c_1.parent_category_id = t_1.category_id)
+                 Buffers: shared hit=2
+                 ->  Seq Scan on category c_1  (cost=0.00..1.40 rows=40 width=8) (actual time=0.012..0.021 rows=40 loops=2)
+                       Buffers: shared hit=2
+                 ->  Hash  (cost=1.60..1.60 rows=80 width=8) (actual time=0.012..0.013 rows=20 loops=2)
+                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                       ->  WorkTable Scan on tree t_1  (cost=0.00..1.60 rows=80 width=8) (actual time=0.003..0.005 rows=20 loops=2)
+   ->  GroupAggregate  (cost=30222.51..32704.53 rows=8000 width=61) (actual time=1322.794..1627.794 rows=8 loops=1)
+         Group Key: t.root_id, root.name
+         Buffers: shared hit=3478, temp read=2211 written=2220
+         ->  Sort  (cost=30222.51..30619.52 rows=158801 width=27) (actual time=1286.484..1485.401 rows=440127 loops=1)
+               Sort Key: t.root_id, root.name, pc.product_id
+               Sort Method: external merge  Disk: 17688kB
+               Buffers: shared hit=3478, temp read=2211 written=2220
+               ->  Hash Join  (cost=1826.84..12703.60 rows=158801 width=27) (actual time=29.390..601.367 rows=440127 loops=1)
+                     Hash Cond: (l.variant_id = v.variant_id)
+                     Buffers: shared hit=3472
+                     ->  Seq Scan on order_line l  (cost=0.00..7638.27 rows=440127 width=14) (actual time=0.444..259.826 rows=440127 loops=1)
+                           Buffers: shared hit=3237
+                     ->  Hash  (cost=1729.61..1729.61 rows=7779 width=21) (actual time=28.537..28.544 rows=21560 loops=1)
+                           Buckets: 32768 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 1437kB
+                           Buffers: shared hit=235
+                           ->  Hash Join  (cost=1396.00..1729.61 rows=7779 width=21) (actual time=15.866..24.159 rows=21560 loops=1)
+                                 Hash Cond: (pc.product_id = v.product_id)
+                                 Buffers: shared hit=235
+                                 ->  Hash Join  (cost=728.90..957.66 rows=3608 width=17) (actual time=9.740..13.394 rows=10000 loops=1)
+                                       Hash Cond: (t.root_id = root.category_id)
+                                       Buffers: shared hit=53
+                                       ->  HashAggregate  (cost=727.00..907.40 rows=18040 width=8) (actual time=9.672..11.349 rows=10000 loops=1)
+                                             Group Key: pc.product_id, t.root_id
+                                             Batches: 1  Memory Usage: 1297kB
+                                             Buffers: shared hit=52
+                                             ->  Hash Join  (cost=296.50..636.80 rows=18040 width=8) (actual time=4.202..6.097 rows=11000 loops=1)
+                                                   Hash Cond: (t.category_id = pc.category_id)
+                                                   Buffers: shared hit=52
+                                                   ->  CTE Scan on tree t  (cost=0.00..6.56 rows=328 width=8) (actual time=0.011..0.219 rows=40 loops=1)
+                                                         Buffers: shared hit=3
+                                                   ->  Hash  (cost=159.00..159.00 rows=11000 width=8) (actual time=3.954..3.955 rows=11000 loops=1)
+                                                         Buckets: 16384  Batches: 1  Memory Usage: 558kB
+                                                         Buffers: shared hit=49
+                                                         ->  Seq Scan on product_category pc  (cost=0.00..159.00 rows=11000 width=8) (actual time=0.033..1.530 rows=11000 loops=1)
+                                                               Buffers: shared hit=49
+                                       ->  Hash  (cost=1.40..1.40 rows=40 width=13) (actual time=0.047..0.048 rows=40 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                             Buffers: shared hit=1
+                                             ->  Seq Scan on category root  (cost=0.00..1.40 rows=40 width=13) (actual time=0.031..0.035 rows=40 loops=1)
+                                                   Buffers: shared hit=1
+                                 ->  Hash  (cost=397.60..397.60 rows=21560 width=8) (actual time=5.967..5.968 rows=21560 loops=1)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 1099kB
+                                       Buffers: shared hit=182
+                                       ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=8) (actual time=0.046..3.069 rows=21560 loops=1)
+                                             Buffers: shared hit=182
+ Planning:
+   Buffers: shared hit=242
+ Planning Time: 17.479 ms
+ Execution Time: 1654.103 ms
+(68 rows)
+
+===== run 2 =====
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=33272.54..33292.54 rows=8000 width=61) (actual time=1100.116..1100.128 rows=8 loops=1)
+   Sort Key: (sum(l.line_total)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=3472, temp read=2211 written=2220
+   CTE tree
+     ->  Recursive Union  (cost=0.00..49.38 rows=328 width=8) (actual time=0.012..0.134 rows=40 loops=1)
+           Buffers: shared hit=3
+           ->  Seq Scan on category c  (cost=0.00..1.40 rows=8 width=8) (actual time=0.009..0.015 rows=8 loops=1)
+                 Filter: (parent_category_id IS NULL)
+                 Rows Removed by Filter: 32
+                 Buffers: shared hit=1
+           ->  Hash Join  (cost=2.60..4.47 rows=32 width=8) (actual time=0.037..0.046 rows=16 loops=2)
+                 Hash Cond: (c_1.parent_category_id = t_1.category_id)
+                 Buffers: shared hit=2
+                 ->  Seq Scan on category c_1  (cost=0.00..1.40 rows=40 width=8) (actual time=0.008..0.011 rows=40 loops=2)
+                       Buffers: shared hit=2
+                 ->  Hash  (cost=1.60..1.60 rows=80 width=8) (actual time=0.012..0.012 rows=20 loops=2)
+                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                       ->  WorkTable Scan on tree t_1  (cost=0.00..1.60 rows=80 width=8) (actual time=0.003..0.005 rows=20 loops=2)
+   ->  GroupAggregate  (cost=30222.51..32704.53 rows=8000 width=61) (actual time=848.518..1100.080 rows=8 loops=1)
+         Group Key: t.root_id, root.name
+         Buffers: shared hit=3472, temp read=2211 written=2220
+         ->  Sort  (cost=30222.51..30619.52 rows=158801 width=27) (actual time=814.446..979.955 rows=440127 loops=1)
+               Sort Key: t.root_id, root.name, pc.product_id
+               Sort Method: external merge  Disk: 17688kB
+               Buffers: shared hit=3472, temp read=2211 written=2220
+               ->  Hash Join  (cost=1826.84..12703.60 rows=158801 width=27) (actual time=26.057..203.024 rows=440127 loops=1)
+                     Hash Cond: (l.variant_id = v.variant_id)
+                     Buffers: shared hit=3472
+                     ->  Seq Scan on order_line l  (cost=0.00..7638.27 rows=440127 width=14) (actual time=0.021..31.344 rows=440127 loops=1)
+                           Buffers: shared hit=3237
+                     ->  Hash  (cost=1729.61..1729.61 rows=7779 width=21) (actual time=25.986..25.992 rows=21560 loops=1)
+                           Buckets: 32768 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 1437kB
+                           Buffers: shared hit=235
+                           ->  Hash Join  (cost=1396.00..1729.61 rows=7779 width=21) (actual time=12.440..21.414 rows=21560 loops=1)
+                                 Hash Cond: (pc.product_id = v.product_id)
+                                 Buffers: shared hit=235
+                                 ->  Hash Join  (cost=728.90..957.66 rows=3608 width=17) (actual time=6.552..10.621 rows=10000 loops=1)
+                                       Hash Cond: (t.root_id = root.category_id)
+                                       Buffers: shared hit=53
+                                       ->  HashAggregate  (cost=727.00..907.40 rows=18040 width=8) (actual time=6.402..8.253 rows=10000 loops=1)
+                                             Group Key: pc.product_id, t.root_id
+                                             Batches: 1  Memory Usage: 1297kB
+                                             Buffers: shared hit=52
+                                             ->  Hash Join  (cost=296.50..636.80 rows=18040 width=8) (actual time=2.417..3.890 rows=11000 loops=1)
+                                                   Hash Cond: (t.category_id = pc.category_id)
+                                                   Buffers: shared hit=52
+                                                   ->  CTE Scan on tree t  (cost=0.00..6.56 rows=328 width=8) (actual time=0.015..0.147 rows=40 loops=1)
+                                                         Buffers: shared hit=3
+                                                   ->  Hash  (cost=159.00..159.00 rows=11000 width=8) (actual time=2.221..2.222 rows=11000 loops=1)
+                                                         Buckets: 16384  Batches: 1  Memory Usage: 558kB
+                                                         Buffers: shared hit=49
+                                                         ->  Seq Scan on product_category pc  (cost=0.00..159.00 rows=11000 width=8) (actual time=0.030..0.798 rows=11000 loops=1)
+                                                               Buffers: shared hit=49
+                                       ->  Hash  (cost=1.40..1.40 rows=40 width=13) (actual time=0.128..0.129 rows=40 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                             Buffers: shared hit=1
+                                             ->  Seq Scan on category root  (cost=0.00..1.40 rows=40 width=13) (actual time=0.104..0.110 rows=40 loops=1)
+                                                   Buffers: shared hit=1
+                                 ->  Hash  (cost=397.60..397.60 rows=21560 width=8) (actual time=5.740..5.741 rows=21560 loops=1)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 1099kB
+                                       Buffers: shared hit=182
+                                       ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=8) (actual time=0.011..2.236 rows=21560 loops=1)
+                                             Buffers: shared hit=182
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.715 ms
+ Execution Time: 1127.317 ms
+(68 rows)
+
+===== run 3 =====
+                                                                                    QUERY PLAN                                                                                     
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=33272.54..33292.54 rows=8000 width=61) (actual time=1296.572..1296.580 rows=8 loops=1)
+   Sort Key: (sum(l.line_total)) DESC
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=3472, temp read=2211 written=2220
+   CTE tree
+     ->  Recursive Union  (cost=0.00..49.38 rows=328 width=8) (actual time=0.005..0.090 rows=40 loops=1)
+           Buffers: shared hit=3
+           ->  Seq Scan on category c  (cost=0.00..1.40 rows=8 width=8) (actual time=0.004..0.008 rows=8 loops=1)
+                 Filter: (parent_category_id IS NULL)
+                 Rows Removed by Filter: 32
+                 Buffers: shared hit=1
+           ->  Hash Join  (cost=2.60..4.47 rows=32 width=8) (actual time=0.021..0.029 rows=16 loops=2)
+                 Hash Cond: (c_1.parent_category_id = t_1.category_id)
+                 Buffers: shared hit=2
+                 ->  Seq Scan on category c_1  (cost=0.00..1.40 rows=40 width=8) (actual time=0.004..0.007 rows=40 loops=2)
+                       Buffers: shared hit=2
+                 ->  Hash  (cost=1.60..1.60 rows=80 width=8) (actual time=0.008..0.008 rows=20 loops=2)
+                       Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                       ->  WorkTable Scan on tree t_1  (cost=0.00..1.60 rows=80 width=8) (actual time=0.001..0.003 rows=20 loops=2)
+   ->  GroupAggregate  (cost=30222.51..32704.53 rows=8000 width=61) (actual time=1054.400..1296.545 rows=8 loops=1)
+         Group Key: t.root_id, root.name
+         Buffers: shared hit=3472, temp read=2211 written=2220
+         ->  Sort  (cost=30222.51..30619.52 rows=158801 width=27) (actual time=1023.157..1185.506 rows=440127 loops=1)
+               Sort Key: t.root_id, root.name, pc.product_id
+               Sort Method: external merge  Disk: 17688kB
+               Buffers: shared hit=3472, temp read=2211 written=2220
+               ->  Hash Join  (cost=1826.84..12703.60 rows=158801 width=27) (actual time=22.671..232.300 rows=440127 loops=1)
+                     Hash Cond: (l.variant_id = v.variant_id)
+                     Buffers: shared hit=3472
+                     ->  Seq Scan on order_line l  (cost=0.00..7638.27 rows=440127 width=14) (actual time=0.014..38.165 rows=440127 loops=1)
+                           Buffers: shared hit=3237
+                     ->  Hash  (cost=1729.61..1729.61 rows=7779 width=21) (actual time=22.611..22.615 rows=21560 loops=1)
+                           Buckets: 32768 (originally 8192)  Batches: 1 (originally 1)  Memory Usage: 1437kB
+                           Buffers: shared hit=235
+                           ->  Hash Join  (cost=1396.00..1729.61 rows=7779 width=21) (actual time=10.797..18.522 rows=21560 loops=1)
+                                 Hash Cond: (pc.product_id = v.product_id)
+                                 Buffers: shared hit=235
+                                 ->  Hash Join  (cost=728.90..957.66 rows=3608 width=17) (actual time=5.845..9.309 rows=10000 loops=1)
+                                       Hash Cond: (t.root_id = root.category_id)
+                                       Buffers: shared hit=53
+                                       ->  HashAggregate  (cost=727.00..907.40 rows=18040 width=8) (actual time=5.808..7.340 rows=10000 loops=1)
+                                             Group Key: pc.product_id, t.root_id
+                                             Batches: 1  Memory Usage: 1297kB
+                                             Buffers: shared hit=52
+                                             ->  Hash Join  (cost=296.50..636.80 rows=18040 width=8) (actual time=2.039..3.429 rows=11000 loops=1)
+                                                   Hash Cond: (t.category_id = pc.category_id)
+                                                   Buffers: shared hit=52
+                                                   ->  CTE Scan on tree t  (cost=0.00..6.56 rows=328 width=8) (actual time=0.007..0.102 rows=40 loops=1)
+                                                         Buffers: shared hit=3
+                                                   ->  Hash  (cost=159.00..159.00 rows=11000 width=8) (actual time=1.919..1.920 rows=11000 loops=1)
+                                                         Buckets: 16384  Batches: 1  Memory Usage: 558kB
+                                                         Buffers: shared hit=49
+                                                         ->  Seq Scan on product_category pc  (cost=0.00..159.00 rows=11000 width=8) (actual time=0.007..0.724 rows=11000 loops=1)
+                                                               Buffers: shared hit=49
+                                       ->  Hash  (cost=1.40..1.40 rows=40 width=13) (actual time=0.025..0.025 rows=40 loops=1)
+                                             Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                             Buffers: shared hit=1
+                                             ->  Seq Scan on category root  (cost=0.00..1.40 rows=40 width=13) (actual time=0.012..0.017 rows=40 loops=1)
+                                                   Buffers: shared hit=1
+                                 ->  Hash  (cost=397.60..397.60 rows=21560 width=8) (actual time=4.819..4.819 rows=21560 loops=1)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 1099kB
+                                       Buffers: shared hit=182
+                                       ->  Seq Scan on product_variant v  (cost=0.00..397.60 rows=21560 width=8) (actual time=0.009..2.161 rows=21560 loops=1)
+                                             Buffers: shared hit=182
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.505 ms
+ Execution Time: 1317.633 ms
+(68 rows)
+

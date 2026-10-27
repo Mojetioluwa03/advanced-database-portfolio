@@ -1,0 +1,56 @@
+===== run 1 =====
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=6861.91..7070.83 rows=6964 width=76) (actual time=26.392..27.477 rows=30 loops=1)
+   Group Key: ((order_date)::date)
+   Buffers: shared hit=2403
+   ->  Sort  (cost=6861.91..6879.32 rows=6964 width=10) (actual time=26.319..26.599 rows=7204 loops=1)
+         Sort Key: ((order_date)::date)
+         Sort Method: quicksort  Memory: 474kB
+         Buffers: shared hit=2403
+         ->  Seq Scan on customer_order o  (cost=0.00..6417.41 rows=6964 width=10) (actual time=22.511..25.431 rows=7204 loops=1)
+               Filter: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date) AND ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[])))
+               Rows Removed by Filter: 192796
+               Buffers: shared hit=2400
+ Planning:
+   Buffers: shared hit=162
+ Planning Time: 2.035 ms
+ Execution Time: 27.618 ms
+(15 rows)
+
+===== run 2 =====
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=6861.91..7070.83 rows=6964 width=76) (actual time=20.487..21.604 rows=30 loops=1)
+   Group Key: ((order_date)::date)
+   Buffers: shared hit=2400
+   ->  Sort  (cost=6861.91..6879.32 rows=6964 width=10) (actual time=20.439..20.719 rows=7204 loops=1)
+         Sort Key: ((order_date)::date)
+         Sort Method: quicksort  Memory: 474kB
+         Buffers: shared hit=2400
+         ->  Seq Scan on customer_order o  (cost=0.00..6417.41 rows=6964 width=10) (actual time=16.709..19.493 rows=7204 loops=1)
+               Filter: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date) AND ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[])))
+               Rows Removed by Filter: 192796
+               Buffers: shared hit=2400
+ Planning Time: 0.106 ms
+ Execution Time: 21.706 ms
+(13 rows)
+
+===== run 3 =====
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=6861.91..7070.83 rows=6964 width=76) (actual time=20.483..21.552 rows=30 loops=1)
+   Group Key: ((order_date)::date)
+   Buffers: shared hit=2400
+   ->  Sort  (cost=6861.91..6879.32 rows=6964 width=10) (actual time=20.433..20.704 rows=7204 loops=1)
+         Sort Key: ((order_date)::date)
+         Sort Method: quicksort  Memory: 474kB
+         Buffers: shared hit=2400
+         ->  Seq Scan on customer_order o  (cost=0.00..6417.41 rows=6964 width=10) (actual time=16.806..19.526 rows=7204 loops=1)
+               Filter: ((order_date >= '2026-09-20'::date) AND (order_date < '2026-10-20'::date) AND ((status)::text = ANY ('{paid,shipped,delivered,refunded}'::text[])))
+               Rows Removed by Filter: 192796
+               Buffers: shared hit=2400
+ Planning Time: 0.102 ms
+ Execution Time: 21.658 ms
+(13 rows)
+

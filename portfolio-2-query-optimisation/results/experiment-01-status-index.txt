@@ -1,0 +1,37 @@
+=== rare value: status = paid (13,979 of 200,000 rows, ~7%) ===
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2804.74..2804.75 rows=1 width=40) (actual time=6.869..6.870 rows=1 loops=1)
+   Buffers: shared hit=2393 read=14
+   ->  Bitmap Heap Scan on customer_order  (cost=160.56..2734.97 rows=13953 width=6) (actual time=1.072..4.598 rows=13979 loops=1)
+         Recheck Cond: ((status)::text = 'paid'::text)
+         Heap Blocks: exact=2393
+         Buffers: shared hit=2393 read=14
+         ->  Bitmap Index Scan on ix_order_status  (cost=0.00..157.07 rows=13953 width=0) (actual time=0.843..0.843 rows=13979 loops=1)
+               Index Cond: ((status)::text = 'paid'::text)
+               Buffers: shared read=14
+ Planning:
+   Buffers: shared hit=40 read=1
+ Planning Time: 0.558 ms
+ Execution Time: 6.967 ms
+(13 rows)
+
+=== common value: status = delivered (139,932 of 200,000 rows, ~70%) ===
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=5598.94..5598.95 rows=1 width=40) (actual time=32.904..32.905 rows=1 loops=1)
+   Buffers: shared hit=2400
+   ->  Seq Scan on customer_order  (cost=0.00..4900.00 rows=139787 width=6) (actual time=0.008..18.064 rows=139932 loops=1)
+         Filter: ((status)::text = 'delivered'::text)
+         Rows Removed by Filter: 60068
+         Buffers: shared hit=2400
+ Planning Time: 0.143 ms
+ Execution Time: 32.935 ms
+(8 rows)
+
+=== index size versus table size ===
+ heap_size | index_size 
+-----------+------------
+ 19 MB     | 1400 kB
+(1 row)
+

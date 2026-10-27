@@ -1,0 +1,59 @@
+===== run 1 =====
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=5846.61..5846.63 rows=5 width=85) (actual time=74.380..74.381 rows=5 loops=1)
+   Sort Key: (round(((100.0 * (count(*) FILTER (WHERE ((delivered_at - dispatched_at) <= '5 days'::interval)))::numeric) / (count(*))::numeric), 1)) DESC, carrier
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1729
+   ->  HashAggregate  (cost=5846.42..5846.56 rows=5 width=85) (actual time=74.337..74.342 rows=5 loops=1)
+         Group Key: carrier
+         Batches: 1  Memory Usage: 24kB
+         Buffers: shared hit=1723
+         ->  Seq Scan on shipment s  (cost=0.00..4199.49 rows=73197 width=21) (actual time=16.197..39.590 rows=73041 loops=1)
+               Filter: ((dispatched_at >= '2025-10-20'::date) AND ((status)::text = 'delivered'::text))
+               Rows Removed by Filter: 92058
+               Buffers: shared hit=1723
+ Planning:
+   Buffers: shared hit=112
+ Planning Time: 1.873 ms
+ Execution Time: 74.454 ms
+(16 rows)
+
+===== run 2 =====
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=5846.61..5846.63 rows=5 width=85) (actual time=55.043..55.044 rows=5 loops=1)
+   Sort Key: (round(((100.0 * (count(*) FILTER (WHERE ((delivered_at - dispatched_at) <= '5 days'::interval)))::numeric) / (count(*))::numeric), 1)) DESC, carrier
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1723
+   ->  HashAggregate  (cost=5846.42..5846.56 rows=5 width=85) (actual time=55.027..55.032 rows=5 loops=1)
+         Group Key: carrier
+         Batches: 1  Memory Usage: 24kB
+         Buffers: shared hit=1723
+         ->  Seq Scan on shipment s  (cost=0.00..4199.49 rows=73197 width=21) (actual time=8.019..21.441 rows=73041 loops=1)
+               Filter: ((dispatched_at >= '2025-10-20'::date) AND ((status)::text = 'delivered'::text))
+               Rows Removed by Filter: 92058
+               Buffers: shared hit=1723
+ Planning Time: 0.100 ms
+ Execution Time: 55.077 ms
+(14 rows)
+
+===== run 3 =====
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=5846.61..5846.63 rows=5 width=85) (actual time=54.596..54.596 rows=5 loops=1)
+   Sort Key: (round(((100.0 * (count(*) FILTER (WHERE ((delivered_at - dispatched_at) <= '5 days'::interval)))::numeric) / (count(*))::numeric), 1)) DESC, carrier
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=1723
+   ->  HashAggregate  (cost=5846.42..5846.56 rows=5 width=85) (actual time=54.581..54.586 rows=5 loops=1)
+         Group Key: carrier
+         Batches: 1  Memory Usage: 24kB
+         Buffers: shared hit=1723
+         ->  Seq Scan on shipment s  (cost=0.00..4199.49 rows=73197 width=21) (actual time=7.770..21.169 rows=73041 loops=1)
+               Filter: ((dispatched_at >= '2025-10-20'::date) AND ((status)::text = 'delivered'::text))
+               Rows Removed by Filter: 92058
+               Buffers: shared hit=1723
+ Planning Time: 0.093 ms
+ Execution Time: 54.626 ms
+(14 rows)
+
