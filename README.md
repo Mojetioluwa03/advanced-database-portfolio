@@ -61,7 +61,7 @@ advanced-database-portfolio/
 │   ├── load.sql                           bulk COPY loader + sequence resync
 │   ├── checks.sql                         post-load verification queries
 │   ├── verification/checks-output.txt     captured output of the verification run
-│   └── erd/                               exported ER diagram
+│   └── erd/                               exported ER diagrams (Chen + crow's foot) and their generators
 ├── portfolio-2-query-optimisation/
 ├── portfolio-3-transactions-concurrency/
 ├── portfolio-4-nosql/
@@ -74,7 +74,7 @@ advanced-database-portfolio/
 
 | # | Component | Status | Evidence |
 |---|---|---|---|
-| 1 | Database Design and Modelling (7) | In progress | `portfolio-1-database-design/` |
+| 1 | Database Design and Modelling (7) | Complete | `portfolio-1-database-design/` |
 | 2 | Query Processing and Optimisation (7) | Complete | `portfolio-2-query-optimisation/` |
 | 3 | Transactions and Concurrency (7) | Not started | — |
 | 4 | NoSQL and Advanced Data Models (7) | Not started | — |

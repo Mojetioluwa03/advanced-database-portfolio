@@ -1,7 +1,7 @@
 # Portfolio 1 — Database Design and Modelling
 
 **Marks:** 7 of 40
-**Status:** design and implementation complete; ER diagram export pending
+**Status:** design, implementation and ER diagram export complete
 **Case study:** ShopStack (see the root README for the full case study statement)
 
 ---
@@ -11,7 +11,7 @@
 | File | Purpose |
 |---|---|
 | `schema.sql` | 26 tables — keys, referential actions, check constraints, one partial unique index, one reconciliation view |
-| `erd/` | Exported ER diagram (Chen notation for the conceptual model, crow's foot for the physical model) |
+| `erd/` | Exported ER diagrams — Chen notation for the conceptual model, crow's foot for the physical model, plus the generators and the conceptual-to-physical mapping (`erd/README.md`) |
 | `seed.py` | Deterministic data generator; same seed always produces the same dataset |
 | `verify_seed.py` | Offline integrity checks against the generated CSVs (no database needed) |
 | `load.sql` | Bulk `COPY` loader plus identity-sequence resynchronisation |
@@ -60,6 +60,12 @@ Headline cardinalities:
 | customer_order → payment | 1:N | Retries, failures and instalments are all separate rows |
 | customer_order → shipment | 1:N | Orders split across parcels |
 | customer ↔ product | M:N via review | A customer reviews a product at most once |
+
+The model above is exported twice in `erd/`: as a Chen-notation diagram
+(`conceptual_chen.svg`) and, one level down, as a crow's-foot diagram of the 26
+tables actually created (`physical_crowfoot.svg`, plus `physical_crowfoot.mmd` for
+GitHub). `erd/README.md` maps every diamond to the table or foreign key that
+implements it.
 
 ---
 
@@ -221,6 +227,10 @@ createdb  -h localhost -p 5432 -U postgres shopstack
 psql -h localhost -p 5432 -U postgres -d shopstack -f schema.sql
 psql -h localhost -p 5432 -U postgres -d shopstack -f load.sql
 psql -h localhost -p 5432 -U postgres -d shopstack -f checks.sql
+
+cd erd
+python generate_erd.py         # re-export the crow's foot diagrams from the loaded schema
+python generate_conceptual.py  # re-export the Chen diagram
 ```
 
 Substitute `-p 5433` throughout if you are using the portable cluster described in the
