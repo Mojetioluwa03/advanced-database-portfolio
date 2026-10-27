@@ -7,26 +7,32 @@
 -- =============================================================================
 
 \echo '=== 1. Row counts ==='
-SELECT 'brand'                   AS table_name, COUNT(*) FROM brand
+SELECT 'attribute'               AS table_name, COUNT(*) FROM attribute
+UNION ALL SELECT 'attribute_value',         COUNT(*) FROM attribute_value
+UNION ALL SELECT 'brand',                   COUNT(*) FROM brand
+UNION ALL SELECT 'cart',                    COUNT(*) FROM cart
+UNION ALL SELECT 'cart_item',               COUNT(*) FROM cart_item
 UNION ALL SELECT 'category',                COUNT(*) FROM category
-UNION ALL SELECT 'supplier',                COUNT(*) FROM supplier
-UNION ALL SELECT 'product',                 COUNT(*) FROM product
-UNION ALL SELECT 'product_category',        COUNT(*) FROM product_category
-UNION ALL SELECT 'product_variant',         COUNT(*) FROM product_variant
-UNION ALL SELECT 'variant_attribute_value', COUNT(*) FROM variant_attribute_value
 UNION ALL SELECT 'customer',                COUNT(*) FROM customer
 UNION ALL SELECT 'customer_address',        COUNT(*) FROM customer_address
-UNION ALL SELECT 'warehouse',               COUNT(*) FROM warehouse
-UNION ALL SELECT 'stock_level',             COUNT(*) FROM stock_level
-UNION ALL SELECT 'stock_movement',          COUNT(*) FROM stock_movement
-UNION ALL SELECT 'cart',                    COUNT(*) FROM cart
-UNION ALL SELECT 'promotion',               COUNT(*) FROM promotion
 UNION ALL SELECT 'customer_order',          COUNT(*) FROM customer_order
 UNION ALL SELECT 'order_line',              COUNT(*) FROM order_line
+UNION ALL SELECT 'order_promotion',         COUNT(*) FROM order_promotion
 UNION ALL SELECT 'payment',                 COUNT(*) FROM payment
-UNION ALL SELECT 'shipment',                COUNT(*) FROM shipment
-UNION ALL SELECT 'review',                  COUNT(*) FROM review
+UNION ALL SELECT 'product',                 COUNT(*) FROM product
+UNION ALL SELECT 'product_category',        COUNT(*) FROM product_category
+UNION ALL SELECT 'product_supplier',        COUNT(*) FROM product_supplier
+UNION ALL SELECT 'product_variant',         COUNT(*) FROM product_variant
+UNION ALL SELECT 'promotion',               COUNT(*) FROM promotion
 UNION ALL SELECT 'return_request',          COUNT(*) FROM return_request
+UNION ALL SELECT 'review',                  COUNT(*) FROM review
+UNION ALL SELECT 'shipment',                COUNT(*) FROM shipment
+UNION ALL SELECT 'shipment_line',           COUNT(*) FROM shipment_line
+UNION ALL SELECT 'stock_level',             COUNT(*) FROM stock_level
+UNION ALL SELECT 'stock_movement',          COUNT(*) FROM stock_movement
+UNION ALL SELECT 'supplier',                COUNT(*) FROM supplier
+UNION ALL SELECT 'variant_attribute_value', COUNT(*) FROM variant_attribute_value
+UNION ALL SELECT 'warehouse',               COUNT(*) FROM warehouse
 ORDER BY table_name;
 
 
@@ -37,16 +43,19 @@ WHERE subtotal <> recomputed_subtotal
    OR grand_total <> recomputed_grand_total;
 
 \echo '=== 3. Settled orders must have a payment equal to grand_total (expect 0) ==='
+-- Aggregated then joined, not a per-order LATERAL subquery: without an index on
+-- payment.order_id a correlated scan is 200k x 181k rows and never finishes.
+WITH paid AS (
+    SELECT order_id, SUM(amount) AS paid_amount
+    FROM payment
+    WHERE status IN ('paid', 'refunded')
+    GROUP BY order_id
+)
 SELECT COUNT(*) AS orders_with_payment_mismatch
 FROM customer_order o
-JOIN LATERAL (
-    SELECT COALESCE(SUM(amount), 0) AS paid
-    FROM payment p
-    WHERE p.order_id = o.order_id
-      AND p.status IN ('paid', 'refunded')
-) x ON TRUE
+LEFT JOIN paid p ON p.order_id = o.order_id
 WHERE o.status IN ('paid', 'shipped', 'delivered', 'refunded')
-  AND x.paid <> o.grand_total;
+  AND COALESCE(p.paid_amount, 0) <> o.grand_total;
 
 \echo '=== 4. stock_level must equal the sum of its movement ledger (expect 0) ==='
 WITH ledger AS (

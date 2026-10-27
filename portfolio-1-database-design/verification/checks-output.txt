@@ -1,0 +1,121 @@
+=== 1. Row counts ===
+       table_name        | count  
+-------------------------+--------
+ attribute               |      3
+ attribute_value         |     21
+ brand                   |     40
+ cart                    |   5000
+ cart_item               |  12696
+ category                |     40
+ customer                |  50000
+ customer_address        |  65090
+ customer_order          | 200000
+ order_line              | 440127
+ order_promotion         |  35142
+ payment                 | 181512
+ product                 |  10000
+ product_category        |  11000
+ product_supplier        |  12492
+ product_variant         |  21560
+ promotion               |     40
+ return_request          |  18129
+ review                  |  67669
+ shipment                | 165099
+ shipment_line           | 343312
+ stock_level             |  27996
+ stock_movement          | 424221
+ supplier                |     60
+ variant_attribute_value |  43120
+ warehouse               |      4
+(26 rows)
+
+=== 2. Order totals must reconcile with their lines (expect 0) ===
+ orders_with_wrong_totals 
+--------------------------
+                        0
+(1 row)
+
+=== 3. Settled orders must have a payment equal to grand_total (expect 0) ===
+ orders_with_payment_mismatch 
+------------------------------
+                            0
+(1 row)
+
+=== 4. stock_level must equal the sum of its movement ledger (expect 0) ===
+ mismatched_stock_rows 
+-----------------------
+                     0
+(1 row)
+
+=== 5. No negative stock (expect 0) ===
+ negative_stock_rows 
+---------------------
+                   0
+(1 row)
+
+=== 6. At most one default address per customer (expect 0) ===
+ customers_with_multiple_defaults 
+----------------------------------
+                                0
+(1 row)
+
+=== 7. Categories never reference themselves (expect 0) ===
+ self_parent_categories 
+------------------------
+                      0
+(1 row)
+
+=== 8. Orders per month (distribution sanity check) ===
+   month    | orders |   revenue   
+------------+--------+-------------
+ 2024-10-01 |   8143 | 13437819.63
+ 2024-11-01 |   7956 | 13255326.12
+ 2024-12-01 |   8375 | 13771575.08
+ 2025-01-01 |   8270 | 13612434.31
+ 2025-02-01 |   7483 | 12310311.72
+ 2025-03-01 |   8300 | 13366449.02
+ 2025-04-01 |   7920 | 12750393.60
+ 2025-05-01 |   8218 | 13634652.32
+ 2025-06-01 |   7884 | 12980364.81
+ 2025-07-01 |   8238 | 13543260.75
+ 2025-08-01 |   8219 | 13576250.97
+ 2025-09-01 |   8003 | 13268097.96
+ 2025-10-01 |   8384 | 13795690.90
+ 2025-11-01 |   8001 | 13254295.32
+ 2025-12-01 |   8233 | 13540473.50
+ 2026-01-01 |   8282 | 13333574.93
+ 2026-02-01 |   7608 | 12397027.63
+ 2026-03-01 |   8218 | 13503075.88
+ 2026-04-01 |   8215 | 13541843.31
+ 2026-05-01 |   8262 | 13580342.91
+ 2026-06-01 |   8078 | 12985419.35
+ 2026-07-01 |   8319 | 13486943.04
+ 2026-08-01 |   8319 | 13638806.04
+ 2026-09-01 |   8032 | 13023977.78
+ 2026-10-01 |   5040 |  8106607.52
+(25 rows)
+
+=== 9. Order status mix ===
+  status   | orders |  pct  
+-----------+--------+-------
+ delivered | 139932 | 69.97
+ shipped   |  16039 |  8.02
+ paid      |  13979 |  6.99
+ pending   |  10113 |  5.06
+ refunded  |  10033 |  5.02
+ cancelled |   9904 |  4.95
+(6 rows)
+
+=== 10. Catalogue depth: products per root category ===
+   root_category   | products 
+-------------------+----------
+ Home & Kitchen    |     1303
+ Electronics       |     1266
+ Toys & Games      |     1261
+ Books             |     1256
+ Fashion           |     1247
+ Sports & Outdoors |     1235
+ Grocery           |     1223
+ Beauty            |     1209
+(8 rows)
+

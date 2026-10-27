@@ -60,6 +60,7 @@ advanced-database-portfolio/
 │   ├── verify_seed.py                     offline integrity checks on the generated CSVs
 │   ├── load.sql                           bulk COPY loader + sequence resync
 │   ├── checks.sql                         post-load verification queries
+│   ├── verification/checks-output.txt     captured output of the verification run
 │   └── erd/                               exported ER diagram
 ├── portfolio-2-query-optimisation/
 ├── portfolio-3-transactions-concurrency/
@@ -87,34 +88,62 @@ captured. Commits are made progressively as each activity progresses.
 
 ## 4. Environment and reproduction
 
-Requires Python 3.9+ and either a local PostgreSQL 15+ instance or Docker.
+Requires Python 3.9+ and PostgreSQL 15+; PostgreSQL 16.15 was used here. Docker is
+optional and only needed if you have no local server.
+
+### Route A — local PostgreSQL
 
 ```bash
-# 1. Start PostgreSQL 16
-docker compose up -d
-
-# 2. Build the schema
 cd portfolio-1-database-design
-docker compose exec -T postgres psql -U shopstack -d shopstack < schema.sql
 
-# 3. Generate the dataset (full volume by default; pass a scale factor for a fast run)
+createdb  -h localhost -p 5432 -U postgres shopstack
+psql -h localhost -p 5432 -U postgres -d shopstack -f schema.sql
+
 python seed.py            # ~10k products, 50k customers, 200k orders
 python verify_seed.py     # offline integrity checks, no database required
 
-# 4. Load it
-docker compose exec -T postgres psql -U shopstack -d shopstack < load.sql
-
-# 5. Verify it
-docker compose exec -T postgres psql -U shopstack -d shopstack < checks.sql
+psql -h localhost -p 5432 -U postgres -d shopstack -f load.sql
+psql -h localhost -p 5432 -U postgres -d shopstack -f checks.sql
 ```
 
-`load.sql` uses psql's `\copy`, so it must be run through `psql` (as above) rather
-than through a generic SQL client, and from inside `portfolio-1-database-design`
-because the CSV paths are relative.
+### Route B — no server, no admin rights
 
-The generated CSV files in `seed-data/` are deliberately excluded from version
-control: they total roughly 150 MB and are fully reproducible from `seed.py` with a
-fixed random seed. The generator, not the data dump, is the artefact.
+PostgreSQL also ships a portable binaries zip: no installer, no Windows service, no
+elevation. This is how the portfolio was built on a machine with no Docker:
+
+```bash
+curl -L -A "Mozilla/5.0" -o postgres.zip \
+  https://get.enterprisedb.com/postgresql/postgresql-16.15-1-windows-x64-binaries.zip
+unzip -q postgres.zip
+pgsql/bin/initdb -D pgdata -U postgres --auth=trust -E UTF8 --locale=C
+pgsql/bin/pg_ctl -D pgdata -o "-p 5433" -l pgdata/server.log start
+pgsql/bin/createdb -h localhost -p 5433 -U postgres shopstack
+```
+
+Then run the five Route A steps against port 5433.
+
+Two traps worth recording. The EDB CDN returns **HTTP 403** to anything that is not a
+browser user-agent, so the `-A "Mozilla/5.0"` flag is not optional. And
+`winget install PostgreSQL.PostgreSQL.16` installs nothing yet still exits **0** — it
+fails on that same 403. Check `psql --version` rather than trusting the exit code.
+
+### Route C — Docker
+
+```bash
+docker compose up -d
+docker compose exec -T postgres psql -U shopstack -d shopstack < schema.sql
+```
+
+`load.sql` uses psql's `\copy`, a client-side meta-command, so it must run through
+`psql` rather than a generic SQL client — and from inside
+`portfolio-1-database-design`, because the CSV paths are relative.
+
+Measured on the reference machine: `schema.sql` under a second, `load.sql` 3m44s for
+1.35M rows (dominated by foreign-key checks), `checks.sql` 1.9s over the loaded data.
+
+The generated CSV files in `seed-data/` are deliberately excluded from version control:
+they total roughly 100 MB and are fully reproducible from `seed.py` with a fixed random
+seed. The generator, not the data dump, is the artefact.
 
 ---
 

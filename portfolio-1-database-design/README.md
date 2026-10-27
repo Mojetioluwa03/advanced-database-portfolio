@@ -217,14 +217,23 @@ whose total contradicts its own quantity and price.
 python seed.py                 # writes seed-data/*.csv (scale: python seed.py 0.1)
 python verify_seed.py          # offline checks, no database required
 
-docker compose -f ../docker-compose.yml up -d
-psql -h localhost -U shopstack -d shopstack -f schema.sql
-psql -h localhost -U shopstack -d shopstack -f load.sql
-psql -h localhost -U shopstack -d shopstack -f checks.sql
+createdb  -h localhost -p 5432 -U postgres shopstack
+psql -h localhost -p 5432 -U postgres -d shopstack -f schema.sql
+psql -h localhost -p 5432 -U postgres -d shopstack -f load.sql
+psql -h localhost -p 5432 -U postgres -d shopstack -f checks.sql
 ```
+
+Substitute `-p 5433` throughout if you are using the portable cluster described in the
+root README.
+
+No local server? The root README's Route B builds a throwaway cluster from the
+portable binaries — no installer, no admin rights, no Docker.
 
 `load.sql` must run through `psql` (it uses `\copy`) and from this directory, because
 the CSV paths are relative.
+
+Measured here: schema builds in under a second, `load.sql` takes 3m44s for 1.35M rows
+(dominated by foreign-key checks), `checks.sql` takes 1.9s.
 
 ---
 
@@ -253,35 +262,37 @@ same command reproduces these counts exactly.
 
 ### 7.2 Integrity status
 
-`verify_seed.py` checks the CSV output directly, so the data is validated before
-PostgreSQL sees it. `checks.sql` encodes the same invariants as SQL against the loaded
-database; §2–§7 are assertions that must return 0, and §1 and §8–§10 are the row
-counts and distributions recorded as evidence.
+Both layers were executed on 2026-10-27 against PostgreSQL 16.15. `verify_seed.py`
+checks the CSV output before loading; `checks.sql` checks the loaded database. The
+full transcript of the second is committed at `verification/checks-output.txt`.
 
-| Assertion | Offline (`verify_seed.py`) | In-database (`checks.sql`) |
+| Assertion | Offline (`verify_seed.py`) | In database (`checks.sql`) |
 |---|---|---|
-| `line_total = quantity * unit_price` | passed | §2 |
-| Order subtotal equals its line sum | passed | §2 |
-| `grand_total = subtotal − discount + shipping + tax` | passed | §2 |
-| Settled orders have a payment equal to `grand_total` | passed | §3 |
-| `stock_level` equals the movement ledger | passed | §4 |
-| No negative stock | passed | §5 |
-| One default address per customer | passed | §6 |
-| No self-parenting categories | passed | §7 |
-| `shipment_line` / `return_request` point at real order lines | passed | FK enforced |
+| `line_total = quantity * unit_price` | passed | §2 — 0 violations |
+| Order subtotal equals its line sum | passed | §2 — 0 violations |
+| `grand_total = subtotal − discount + shipping + tax` | passed | §2 — 0 violations |
+| Settled orders have a payment equal to `grand_total` | passed | §3 — 0 violations |
+| `stock_level` equals the movement ledger | passed | §4 — 0 violations |
+| No negative stock | passed | §5 — 0 violations |
+| One default address per customer | passed | §6 — 0 violations |
+| No self-parenting categories | passed | §7 — 0 violations |
+| `shipment_line` / `return_request` point at real order lines | passed | composite FK enforced |
 | Reviews unique per customer and product | passed | FK + unique enforced |
 
-Result on the full dataset:
+Row counts returned by the database match the generated CSV exactly across all 26
+tables (1,354,231 rows in total). Distributions are sane: 25 monthly buckets, six order
+statuses, eight root categories each carrying 1,209–1,303 products.
 
-```
-header check: 26 \copy statements compared against CSV headers
-checked: 200000 orders, 440127 order lines, 21560 variants, 50000 customers
-all checks passed
-```
+### 7.3 A note on query form
 
-The `checks.sql` column is completed once the database is provisioned; the rows above
-are the assertions it will confirm, and the SQL is committed so the check is
-reproducible rather than asserted.
+The payment check originally used a per-order `LATERAL` subquery against `payment`. With
+no index on `payment.order_id` that is 200,000 × 181,512 row visits; it did not finish
+in five minutes and had to be cancelled. Rewritten as aggregate-then-join it returns the
+same answer in under two seconds.
+
+The result did not change — only the shape of the query did. That is Portfolio 2's
+subject in miniature, and it is recorded here rather than quietly fixed, because the
+unindexed baseline is the evidence P2 is measured against.
 
 ---
 
