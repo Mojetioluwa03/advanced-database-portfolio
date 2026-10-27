@@ -1,0 +1,18 @@
+== 1. both alive
+standby in recovery : t
+replication senders : 1
+
+== 2. stop the standby
+standby status      : pg_ctl: no server running
+
+== 3. does the primary still take writes?
+write accepted      : 2232
+replication senders : 0   <- replica gone, writes continue
+
+== 4. what a report query sees now
+reading the standby : psql: error: connection to server at "127.0.0.1", port 5444 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+== 5. restart and catch up
+standby rows        : 62135
+lag bytes           : 0

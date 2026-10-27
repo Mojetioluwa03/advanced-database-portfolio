@@ -1,0 +1,10 @@
+query,run1_ms,run2_ms,run3_ms,median_ms
+routed_point,0.718,0.657,0.322,0.657
+routed_count,2.438,1.963,2.778,2.438
+fanout_point,1.948,1.692,2.328,1.948
+fanout_count,211.037,196.942,196.331,196.942
+fanout_group,225.453,244.982,202.051,225.453
+router_count,11.870,10.133,9.071,10.133
+router_status,40.224,28.009,31.812,31.812
+single_count,15.428,15.353,14.851,15.353
+single_status,36.075,32.392,39.346,36.075

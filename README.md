@@ -3,7 +3,7 @@
 **Course:** MIT 8103 Advanced Database Systems
 **Assessment:** Individual Practical Database Portfolio (40 marks)
 **Session:** 2026/2027, First Semester Continuous Assessment
-**Student:** `<Your Name>` — `<Student ID>`
+**Student:** Ewetola Mojetioluwa — 301897504
 
 ---
 
@@ -53,6 +53,10 @@ The case study is used consistently across all five portfolio activities.
 advanced-database-portfolio/
 ├── README.md                              ← you are here
 ├── docker-compose.yml                     ← PostgreSQL 16 for local reproduction
+├── Ewetola_Mojetioluwa_Documentation.pdf  submitted 2–3 page summary
+├── Ewetola_Mojetioluwa_README.txt         submitted plain-text README
+├── documentation/
+│   └── Ewetola_Mojetioluwa_Documentation.html   print source for the PDF
 ├── portfolio-1-database-design/
 │   ├── README.md                          design decisions and normalisation argument
 │   ├── schema.sql                         26 tables, keys, constraints, reconciliation view
@@ -66,6 +70,14 @@ advanced-database-portfolio/
 ├── portfolio-3-transactions-concurrency/
 ├── portfolio-4-nosql/
 └── portfolio-5-distributed-cloud/
+    ├── topology.md                        shard and replica layout, key justification, measured costs
+    ├── cap-analysis.md                    consistency requirement per data domain
+    ├── shard/                             slice extraction, load, cluster build
+    ├── router/                            postgres_fdw servers, views, routing functions
+    ├── replication/                       EU standby via pg_basebackup -R
+    ├── experiments/                       e1–e7 and the benchmark harness
+    ├── benchmarks/routing.csv             median timings
+    └── evidence/                          captured transcripts
 ```
 
 ---
@@ -78,8 +90,8 @@ advanced-database-portfolio/
 | 2 | Query Processing and Optimisation (7) | Complete | `portfolio-2-query-optimisation/` |
 | 3 | Transactions and Concurrency (7) | Complete | `portfolio-3-transactions-concurrency/` |
 | 4 | NoSQL and Advanced Data Models (7) | Complete | `portfolio-4-nosql/` |
-| 5 | Distributed and Cloud Database Exercise (6) | Not started | — |
-| — | Final Documentation (6) | Not started | — |
+| 5 | Distributed and Cloud Database Exercise (6) | Complete | `portfolio-5-distributed-cloud/` |
+| — | Final Documentation (6) | Complete | `Ewetola_Mojetioluwa_Documentation.pdf`, `documentation/` |
 
 Each folder's README records what was done, how it was tested, and the evidence
 captured. Commits are made progressively as each activity progresses.
@@ -166,6 +178,26 @@ confusing failure to diagnose later.
 Measured on the reference machine: `schema.sql` under a second, `load.sql` 3m44s for
 1.35M rows (dominated by foreign-key checks), `checks.sql` 1.9s over the loaded data.
 
+### Route E — the Portfolio 5 cluster
+
+Portfolio 5 needs five servers on one machine, and Docker is not available, so the
+shards and the standby are portable clusters started with `pg_ctl` — the same binaries
+as Route B, one data directory each:
+
+```bash
+cd portfolio-5-distributed-cloud
+bash shard/build_shards.sh         # EU/UK/US shards on 5441/5442/5443, built from 5433
+bash router/setup_router.sh        # the FDW router database on 5433
+bash replication/setup_replica.sh  # EU hot standby on 5444
+```
+
+`build_shards.sh` expects the Portfolio 1 database on 5433 (Route A or B) and keeps
+the shard data directories under `.pgshards/`, which is excluded from version control
+like `pgdata/`. Ports and node roles are in `portfolio-5-distributed-cloud/topology.md`
+§2. The failure experiments stop and restart real server processes, so run them when
+nothing else is using 5441–5444. Measured costs are in
+`portfolio-5-distributed-cloud/benchmarks/routing.csv`.
+
 The generated CSV files in `seed-data/` are deliberately excluded from version control:
 they total roughly 100 MB and are fully reproducible from `seed.py` with a fixed random
 seed. The generator, not the data dump, is the artefact.
@@ -183,7 +215,7 @@ of the chosen NoSQL store for Portfolio 4. This portfolio complies as follows.
 | P2 Query and optimisation | SQL, run through psql | `queries.sql`, `indexes.sql`, captured `EXPLAIN (ANALYZE, BUFFERS)` output |
 | P3 Transactions | SQL, two concurrent psql sessions | `BEGIN`/`COMMIT`/`ROLLBACK`/`SAVEPOINT`, isolation levels, `SELECT … FOR UPDATE` |
 | P4 NoSQL | MongoDB query language (MQL) — `find`, aggregation pipelines, `$elemMatch`, `$group` | `portfolio-4-nosql/queries/`, captured `explain("executionStats")` output |
-| P5 Distributed and cloud | SQL plus deployment configuration | `portfolio-5-distributed-cloud/` |
+| P5 Distributed and cloud | SQL — FDW server/table DDL, routing functions, `EXPLAIN (ANALYZE)` over foreign scans; `pg_basebackup` and `pg_ctl` for deployment | `portfolio-5-distributed-cloud/router/`, `shard/`, `replication/`, `experiments/` |
 
 `seed.py` and `load_catalogue.py` are the two non-SQL components. Both fabricate data
 and stop: they run no query that answers a graded question, produce no analysis and
@@ -209,9 +241,9 @@ documentation can be regenerated by re-running `seed.py` and `load.sql`.
 
 | Item | Detail |
 |---|---|
-| Tool | `<e.g. Qoder>` |
-| Used for | `<be specific: schema scaffolding, seed data generation, query drafting, ...>` |
-| Review performed | `<how each output was checked: re-read, executed, results compared, modified>` |
+| Tool | Qoder, an AI coding agent (Claude models). An earlier scaffold draft was written with Claude in a first repository; it was reviewed against the brief and superseded by this implementation. |
+| Used for | Drafting the schema and DDL, `seed.py`, query and index candidates, the two-session and distributed experiment harnesses, and drafting the READMEs and the final documentation. |
+| Review performed | Every script was executed against PostgreSQL 16.15 or MongoDB 9.0.4 on this machine, and the captured output is committed beside it. Plans and timings were read and compared with expectations; claims contradicted by measurement were rewritten (the P4 index rule, the P5 aggregate assumption, the P3 constraint assumption). No result or timing was fabricated, and every number quoted is traceable to a committed file. |
 
 The database implementation, analysis, documentation and conclusions submitted here
 are my own work. AI assistance is declared above in line with the University's
@@ -226,4 +258,14 @@ submitted work.
 - Connolly, T. and Begg, C. *Database Systems: A Practical Approach to Design,
   Implementation and Management*, 6th ed.
 - PostgreSQL Global Development Group, *PostgreSQL 16 Documentation*.
-- `<add any datasets, libraries or external resources used>`
+- PostgreSQL Global Development Group, *PostgreSQL 16 Documentation* — `postgres_fdw`,
+  backup and replication, and transaction isolation (the sources for the Portfolio 5
+  topology and the Portfolio 3 isolation claims).
+- MongoDB Inc., *MongoDB 7/9 Manual* — aggregation pipeline, `$elemMatch`, index
+  behaviour (Portfolio 4).
+- Kleppmann, M., *Designing Data-Intensive Applications* — replication, partitioning
+  and consistency models (the vocabulary used in `cap-analysis.md`).
+- Abadi, D., "Consistency Tradeoffs in Modern Distributed Database System Design"
+  (2012) — the PACELC formulation used in the Portfolio 5 analysis.
+- All datasets are synthetic and generated by `seed.py`; no external dataset,
+  library or service was used beyond the software listed in section 4.

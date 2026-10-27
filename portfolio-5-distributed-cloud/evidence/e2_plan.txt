@@ -1,0 +1,46 @@
+== fan-out view: the aggregate runs in the router, every row crosses the network
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Sort
+   Output: o.status, (count(*))
+   Sort Key: o.status
+   ->  HashAggregate
+         Output: o.status, count(*)
+         Group Key: o.status
+         ->  Append
+               ->  Foreign Scan on shard.order_eu o
+                     Output: o.status
+                     Remote SQL: SELECT status FROM public.customer_order
+               ->  Foreign Scan on shard.order_uk o_1
+                     Output: o_1.status
+                     Remote SQL: SELECT status FROM public.customer_order
+               ->  Foreign Scan on shard.order_us o_2
+                     Output: o_2.status
+                     Remote SQL: SELECT status FROM public.customer_order
+(16 rows)
+
+
+== same aggregate, partials per shard: only the partials cross the network
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
+ Sort
+   Output: order_eu.status, ((sum((count(*))))::bigint)
+   Sort Key: order_eu.status
+   ->  HashAggregate
+         Output: order_eu.status, (sum((count(*))))::bigint
+         Group Key: order_eu.status
+         ->  Append
+               ->  Foreign Scan
+                     Output: order_eu.status, (count(*))
+                     Relations: Aggregate on (shard.order_eu)
+                     Remote SQL: SELECT status, count(*) FROM public.customer_order GROUP BY 1
+               ->  Foreign Scan
+                     Output: order_uk.status, (count(*))
+                     Relations: Aggregate on (shard.order_uk)
+                     Remote SQL: SELECT status, count(*) FROM public.customer_order GROUP BY 1
+               ->  Foreign Scan
+                     Output: order_us.status, (count(*))
+                     Relations: Aggregate on (shard.order_us)
+                     Remote SQL: SELECT status, count(*) FROM public.customer_order GROUP BY 1
+(19 rows)
+

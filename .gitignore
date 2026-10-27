@@ -15,4 +15,7 @@ Thumbs.db
 
 # Local database volumes and logs
 pgdata/
+.pgdata/
+.pgshards/
+.mongodata/
 *.log

@@ -1,0 +1,61 @@
+Pager usage is off.
+Timing is on.
+--- single node (Portfolio 1 database, 200k orders in one table)
+ orders |   revenue    
+--------+--------------
+ 200000 | 327695014.40
+(1 row)
+
+Time: 157.825 ms
+  status   | count  
+-----------+--------
+ cancelled |   9904
+ delivered | 139932
+ paid      |  13979
+ pending   |  10113
+ refunded  |  10033
+ shipped   |  16039
+(6 rows)
+
+Time: 55.622 ms
+You are now connected to database "shopstack_router" as user "postgres".
+--- three shards through the router (same rows, split three ways)
+ orders |   revenue    
+--------+--------------
+ 200000 | 327695014.40
+(1 row)
+
+Time: 641.938 ms
+  status   | count  
+-----------+--------
+ cancelled |   9904
+ delivered | 139932
+ paid      |  13979
+ pending   |  10113
+ refunded  |  10033
+ shipped   |  16039
+(6 rows)
+
+Time: 227.503 ms
+--- does the aggregate run on the shards or in the router?
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Sort
+   Output: o.status, (count(*))
+   Sort Key: o.status
+   ->  HashAggregate
+         Output: o.status, count(*)
+         Group Key: o.status
+         ->  Append
+               ->  Foreign Scan on shard.order_eu o
+                     Output: o.status
+                     Remote SQL: SELECT status FROM public.customer_order
+               ->  Foreign Scan on shard.order_uk o_1
+                     Output: o_1.status
+                     Remote SQL: SELECT status FROM public.customer_order
+               ->  Foreign Scan on shard.order_us o_2
+                     Output: o_2.status
+                     Remote SQL: SELECT status FROM public.customer_order
+(16 rows)
+
+Time: 1.838 ms

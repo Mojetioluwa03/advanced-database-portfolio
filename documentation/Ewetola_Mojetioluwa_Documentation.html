@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ewetola Mojetioluwa — MIT 8103 Practical Portfolio</title>
+<style>
+  @page { size: A4; margin: 14mm 15mm 12mm 15mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Calibri, Arial, sans-serif;
+    font-size: 9.5pt; line-height: 1.36; color: #1a1a1a; margin: 0;
+  }
+  h1 { font-size: 17pt; margin: 0 0 2mm 0; letter-spacing: -0.2pt; }
+  .sub { font-size: 10.5pt; color: #333; margin-bottom: 1mm; }
+  .meta { font-size: 8.8pt; color: #555; margin-bottom: 1.5mm; }
+  .link { font-size: 9.2pt; margin: 0 0 4mm 0; padding: 2mm 3mm; background: #f2f4f7; border-left: 3px solid #33507a; }
+  .link a { color: #24476f; text-decoration: none; }
+  h2 { font-size: 10.6pt; margin: 4.5mm 0 1.6mm 0; padding-bottom: 0.8mm; border-bottom: 0.6pt solid #c9d2dd; break-after: avoid; }
+  h3 { font-size: 9.6pt; margin: 3mm 0 0.8mm 0; color: #24476f; break-after: avoid; }
+  p { margin: 0 0 1.9mm 0; text-align: justify; }
+  ul { margin: 0 0 1.9mm 0; padding-left: 5mm; }
+  li { margin-bottom: 0.7mm; }
+  table { width: 100%; border-collapse: collapse; margin: 1mm 0 2.6mm 0; font-size: 8.6pt; break-inside: avoid; }
+  th { text-align: left; background: #eef1f5; border-bottom: 0.8pt solid #8895a7; padding: 1.4mm 1.6mm; font-weight: 600; }
+  td { border-bottom: 0.4pt solid #d8dee6; padding: 1.3mm 1.6mm; vertical-align: top; }
+  td.num, th.num { text-align: right; }
+  .mono { font-family: Consolas, "Courier New", monospace; font-size: 8.4pt; }
+  .note { font-size: 8.4pt; color: #555; }
+  .sig { margin-top: 2mm; padding-top: 2mm; border-top: 0.5pt solid #bbb; font-size: 8.6pt; color: #444; }
+  .avoid { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<h1>Advanced Database Systems — Practical Portfolio</h1>
+<div class="sub">Case study: <strong>ShopStack</strong>, a fictional multi-region online retailer (UK, EU, US)</div>
+<div class="meta">Ewetola Mojetioluwa &nbsp;·&nbsp; 301897504 &nbsp;·&nbsp; MIT 8103 Advanced Database Systems &nbsp;·&nbsp; 2026/2027, First Semester &nbsp;·&nbsp; 27 October 2026</div>
+<div class="link">Source repository (private): <a href="https://github.com/Mojetioluwa03/advanced-database-portfolio">https://github.com/Mojetioluwa03/advanced-database-portfolio</a></div>
+
+<h2>1. What the portfolio contains</h2>
+<p>One case study runs through five activities, so each one starts from the database the previous
+one left behind. The dataset is deterministic: <span class="mono">seed.py</span> with a fixed random seed
+produces the same 26-table, 1.35-million-row ShopStack every time, which is why any plan or timing quoted
+below can be regenerated. Every claim is backed by output captured next to the script that produced it;
+database timings are server-side, warm-up discarded, median of three runs.</p>
+
+<table>
+  <thead>
+    <tr><th style="width:15%">Activity</th><th style="width:47%">What was built</th><th style="width:38%">Headline result</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1. Design</strong><br>7 marks</td>
+      <td>26-table relational schema with keys, referential actions, check constraints and a reconciliation view; Chen and crow's-foot ER diagrams; deterministic generator, bulk loader and post-load checks.</td>
+      <td>1.35M rows loaded in 3m44s; all integrity checks pass; normalised to 3NF and BCNF, with four deliberate denormalisations argued and audited by a reconciliation view.</td>
+    </tr>
+    <tr>
+      <td><strong>2. Optimisation</strong><br>7 marks</td>
+      <td>Eight business queries spanning date ranges, lateral lookups, anti-joins, ledger scans and reporting joins; six indexes; before/after <span class="mono">EXPLAIN (ANALYZE, BUFFERS)</span>.</td>
+      <td>Latest-payment query <strong>147,910 → 27 ms</strong> (5,455×); daily trading 21.7 → 3.5 ms. Two indexes were measured and deliberately rejected.</td>
+    </tr>
+    <tr>
+      <td><strong>3. Transactions</strong><br>7 marks</td>
+      <td>Commit, rollback and savepoint demonstrations; four two-session races covering lost update, isolation levels, deadlock and write skew.</td>
+      <td>Oversell reproduced — two paid orders from one unit, <strong>with no constraint error</strong>; two fixes measured. Write skew survives REPEATABLE READ and is stopped by SERIALIZABLE.</td>
+    </tr>
+    <tr>
+      <td><strong>4. NoSQL</strong><br>7 marks</td>
+      <td>10,000-product document model in MongoDB with the embed/reference boundary justified; five MQL queries, five SQL equivalents returning the same rows; three indexes; three experiments.</td>
+      <td>Product page assembly <strong>14.3 → 3 ms</strong> in the document store; the brand league table is <strong>4× slower</strong> there (22 vs 95 ms) because every array must be unwound.</td>
+    </tr>
+    <tr>
+      <td><strong>5. Distributed</strong><br>6 marks</td>
+      <td>Three jurisdiction shards, a physical streaming standby, a <span class="mono">postgres_fdw</span> router with fan-out views and routing functions; seven experiments including node-loss and a two-phase-commit probe.</td>
+      <td>Point lookup 0.66 ms routed / 1.95 ms fanned out; <span class="mono">count(*)</span> 196.9 ms through the view but <strong>10.1 ms</strong> with per-shard partials; 63.3% of stock movements reference an order on another shard.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>2. Selected findings</h2>
+
+<h3>2.1 An index is a hypothesis, and two of them failed (Portfolio 2)</h3>
+<p>Six indexes were created, and two were rejected on evidence rather than kept for completeness. The
+anti-join for "products never ordered" did not change plan and stayed at ~80 ms, and the carrier-delivery
+query kept its sequential scan because it returns 30% of the table and the planner correctly prefers a
+heap scan. Reporting those as non-results is more useful than claiming eight improvements: an index that
+the planner refuses is a fact about the data distribution, not a mistake to hide.</p>
+
+<h3>2.2 The constraint that never fired (Portfolio 3)</h3>
+<p>Two sessions each read one unit of stock, slept through a payment call, and each wrote back zero.
+The result was two paid orders, two sale movements, and one unit ever existed — and
+<span class="mono">CHECK (quantity &gt;= 0)</span> never fired, because neither session asked the database
+to do arithmetic; both computed the new value in the application from a stale read. A constraint protects
+against a wrong value being written, not against a decision made on stale data. A row lock held across the
+payment call fixes it at the cost of serialising every checkout of that SKU; a guarded
+<span class="mono">UPDATE … WHERE quantity &gt;= 1</span> fixes it without the wait. The same portfolio shows
+write skew surviving REPEATABLE READ, the SERIALIZABLE retry loop, and a deadlock whose victim's first
+update rolls back cleanly.</p>
+
+<h3>2.3 The document model won the page and lost the league table (Portfolio 4)</h3>
+<p>Embedding brand, categories and variants in one product document made page assembly 4.8× faster, because
+the page is fetched together and the relational version needs four joins. The same embedding made the
+cross-catalogue brand aggregation four times slower, because it must unwind every variant array that the
+page reads never wanted. The model is a good aggregate boundary for fetching a page and a bad one for
+counting across all pages; neither result generalises without the other.</p>
+
+<h3>2.4 Federation strategy matters more than sharding (Portfolio 5)</h3>
+<p>Three shards keyed by jurisdiction answer a point read in 0.66 ms; the same read through a
+<span class="mono">UNION ALL</span> view costs 1.95 ms because it visits all three. The larger effect is on
+aggregates: <span class="mono">count(*)</span> through the view takes 196.9 ms against the single node's
+15.4 ms, because the planner cannot push the aggregate through the union and ships 200,000 rows. Asking each
+shard for its partial and combining three numbers in the router costs 10.1 ms. The point is not that
+distribution is faster; it is that the wrong federation strategy is an order of magnitude worse than the
+right one, and the plan — not intuition — shows which is which.</p>
+
+<h2>3. The distributed design, and its consistency argument (Portfolio 5)</h2>
+<p>Two domains have different owners, so they are partitioned separately. Orders and customers follow the
+jurisdiction of the customer's default address, which keeps a checkout, its payment and its shipment in one
+database and therefore inside one ACID transaction. Stock follows the warehouse, so the ledger write that
+must never be lost is local to the node that performed the movement. The catalogue is replicated whole to
+every shard because every region reads it and nobody writes it at checkout pace; the sale snapshots
+<span class="mono">unit_price</span> into the order line, so a stale description cannot change what a
+customer is charged.</p>
+<p>The consistency posture is chosen per domain rather than for the system. Stock and money are CP: if the
+warehouse shard is unreachable the sale is refused, because an oversell costs a refund and goodwill while a
+deferred sale costs nothing. Catalogue reads and reports are EL: a replica may serve a page that is hundreds
+of milliseconds old, measured at 18 KB / 465 ms of lag with a 338 ms catch-up. The ledger is durable and
+append-only, weak only where it points at an order on another shard — 63.3% of sale movements do — which is
+why the foreign key is replaced by a router-level reconciliation query that finds zero orphans.</p>
+<p>Checkout is the one operation spanning two shards, and the stack cannot make it atomic:
+<span class="mono">postgres_fdw</span> refuses <span class="mono">PREPARE TRANSACTION</span> once a foreign
+table has been touched. The documented design is therefore a saga — order first, stock second, idempotent
+retry, scheduled reconciliation — ordered so that the recoverable failure is the one that can happen. It is
+analysed and costed rather than implemented, and the documentation says so.</p>
+
+<h2>4. Reflection</h2>
+<p><strong>Measurement changed the conclusions, repeatedly.</strong> I predicted the document store would win
+the brand aggregation and it lost by 4×; I predicted federation would cost parity and the pushed-down
+aggregate beat the single node; I assumed a check constraint would stop an oversell and it never fired. Each
+correction is kept in the repository as an experiment or a negative result rather than quietly edited out,
+because the wrong prediction is evidence about how the system actually behaves.</p>
+<p><strong>The constraints shaped the engineering, and are stated rather than hidden.</strong> There was no
+Docker, no administrative rights and no cloud account, so PostgreSQL and MongoDB ran from portable archives
+and the Portfolio 5 cluster is five <span class="mono">pg_ctl</span>-managed processes rather than containers;
+that deviation from the planned "containerised configuration" is declared in the P5 README. The "network"
+between shards is loopback, which understates WAN latency, so the evidence is the ratios — one shard versus
+three, shipped rows versus pushed-down aggregates — not the absolute milliseconds.</p>
+<p><strong>The judgement call I am least certain of</strong> is replacing the movement-to-order foreign key
+with reconciliation. The alternative — keying movements by the customer so the reference stays local — would
+make every warehouse query fan out, moving the cost from a periodic check to every pick. I chose the
+periodic check, and it is defensible only because that check is cheap; if it were expensive, the shard key
+would have to change. The other open item is operational rather than technical: no automated failover, so a
+shard loss needs an operator.</p>
+<p><strong>What I would do next</strong> with more time: give every shard its own standby behind a failover
+manager, replace the catalogue rebuild with logical replication from a single catalogue database, and build
+the checkout saga end to end with a request-scoped idempotency key and a compensator, so the cross-shard path
+is demonstrated rather than analysed.</p>
+
+<h2>5. AI use declaration</h2>
+<table class="avoid">
+  <thead>
+    <tr><th style="width:20%">Item</th><th>Detail</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Tool</td>
+      <td>Qoder, an AI coding agent (Claude models). An earlier scaffold draft was produced with Claude in a
+      first repository; it was reviewed against the brief and superseded by this implementation.</td>
+    </tr>
+    <tr>
+      <td>Used for</td>
+      <td>Drafting schema and DDL, the deterministic seed generator, query and index candidates, experiment
+      harnesses (two-session races, replication and node-loss scripts), and drafting this documentation and
+      the READMEs. No query result or timing was fabricated: every number quoted was produced by executing
+      the committed scripts.</td>
+    </tr>
+    <tr>
+      <td>Review performed</td>
+      <td>Every script was executed against PostgreSQL 16.15 or MongoDB 9.0.4 on this machine; captured
+      output is committed beside each script. Plans and timings were read and compared against expectations;
+      claims contradicted by measurement were rewritten (the P4 index rule, the P5 aggregate assumption, the
+      P3 constraint assumption). AI-drafted text was edited to match what the results actually show, and
+      every number quoted here is traceable to a file in the repository.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6. Evidence and reproduction</h2>
+<p>Each activity folder contains a README stating what was done, how it was tested, and which files hold the
+captured output. The root README gives five reproduction routes; the essential sequence is: run
+<span class="mono">seed.py</span>, load the schema and data, then run the activity's own scripts, which
+rewrite the evidence they capture. Portfolio 4 needs MongoDB on port 27018; Portfolio 5 needs the Portfolio 1
+cluster on 5433 and starts its shards on 5441–5443 with a standby on 5444. The dataset is regenerable, so
+any plan or timing in this document can be reproduced, and where a result was negative it is reported as
+such.</p>
+
+<div class="sig">
+I declare that the database implementation, analysis, documentation and conclusions submitted here are my
+own work, that AI assistance is declared above in line with the University's academic integrity
+requirements, and that I can explain and defend every part of the submitted work.
+<br><br>
+Ewetola Mojetioluwa &nbsp;·&nbsp; 301897504 &nbsp;·&nbsp; 27 October 2026
+</div>
+
+</body>
+</html>

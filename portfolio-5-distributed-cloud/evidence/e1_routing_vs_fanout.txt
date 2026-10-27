@@ -1,0 +1,55 @@
+Pager usage is off.
+Timing is on.
+Time: 45.454 ms
+--- routed: one shard, key known
+                                                                                                              QUERY PLAN                                                                                                               
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on shard.order_us (actual time=1.270..1.271 rows=1 loops=1)
+   Output: order_id, customer_id, order_date, status, shipping_address_id, billing_address_id, currency, subtotal, discount_total, shipping_total, tax_total, grand_total
+   Remote SQL: SELECT order_id, customer_id, order_date, status, shipping_address_id, billing_address_id, currency, subtotal, discount_total, shipping_total, tax_total, grand_total FROM public.customer_order WHERE ((order_id = 6))
+ Planning Time: 0.107 ms
+ Execution Time: 1.568 ms
+(5 rows)
+
+Time: 3.847 ms
+--- fan-out view: same row, three shards contacted
+                                                                                                                 QUERY PLAN                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Append (actual time=6.902..6.904 rows=1 loops=1)
+   ->  Foreign Scan on shard.order_eu o (actual time=4.072..4.072 rows=0 loops=1)
+         Output: 'eu'::text, o.order_id, o.customer_id, o.order_date, o.status, o.shipping_address_id, o.billing_address_id, o.currency, o.subtotal, o.discount_total, o.shipping_total, o.tax_total, o.grand_total
+         Remote SQL: SELECT order_id, customer_id, order_date, status, shipping_address_id, billing_address_id, currency, subtotal, discount_total, shipping_total, tax_total, grand_total FROM public.customer_order WHERE ((order_id = 6))
+   ->  Foreign Scan on shard.order_uk o_1 (actual time=2.576..2.576 rows=0 loops=1)
+         Output: 'uk'::text, o_1.order_id, o_1.customer_id, o_1.order_date, o_1.status, o_1.shipping_address_id, o_1.billing_address_id, o_1.currency, o_1.subtotal, o_1.discount_total, o_1.shipping_total, o_1.tax_total, o_1.grand_total
+         Remote SQL: SELECT order_id, customer_id, order_date, status, shipping_address_id, billing_address_id, currency, subtotal, discount_total, shipping_total, tax_total, grand_total FROM public.customer_order WHERE ((order_id = 6))
+   ->  Foreign Scan on shard.order_us o_2 (actual time=0.246..0.246 rows=1 loops=1)
+         Output: 'us'::text, o_2.order_id, o_2.customer_id, o_2.order_date, o_2.status, o_2.shipping_address_id, o_2.billing_address_id, o_2.currency, o_2.subtotal, o_2.discount_total, o_2.shipping_total, o_2.tax_total, o_2.grand_total
+         Remote SQL: SELECT order_id, customer_id, order_date, status, shipping_address_id, billing_address_id, currency, subtotal, discount_total, shipping_total, tax_total, grand_total FROM public.customer_order WHERE ((order_id = 6))
+ Planning Time: 0.466 ms
+ Execution Time: 71.402 ms
+(12 rows)
+
+Time: 73.387 ms
+--- routed aggregate (one shard)
+ count 
+-------
+ 45961
+(1 row)
+
+Time: 148.223 ms
+--- fan-out aggregate (three shards)
+ count  
+--------
+ 200000
+(1 row)
+
+Time: 154.546 ms
+--- rows per shard through the view
+ shard | count 
+-------+-------
+ eu    | 62135
+ uk    | 91904
+ us    | 45961
+(3 rows)
+
+Time: 197.947 ms

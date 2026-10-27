@@ -1,0 +1,22 @@
+probe row: warehouse 3 variant 3, quantity 2231
+
+== 1. stop the standby from applying WAL
+replay paused: t
+
+== 2. commit a write on the primary
+primary quantity    : 3231
+standby quantity    : 2231  <- stale
+
+== 3. how far behind is the standby?
+primary wal lsn     : 0/A0047F8
+standby replay lsn  : 0/A000148
+lag bytes           : 18096
+sender view         : streaming, replay_lag 00:00:00.465417
+
+== 4. resume and time the catch-up
+catch-up            : 338 ms
+standby quantity    : 3231  <- caught up
+lag bytes after     : 0
+
+== 5. restore the probe row
+quantity back to    : 2231

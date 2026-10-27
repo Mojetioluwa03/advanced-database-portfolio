@@ -1,0 +1,23 @@
+== 1. all shards up
+customers via view  : 50001
+EU-routed orders    : 62135
+
+== 2. stop the US shard (port 5443)
+US status           : pg_ctl: no server running
+
+== 3. a query that knows its jurisdiction still works
+EU-routed orders    : 62135
+
+== 4. a request for US data cannot be served
+US-routed orders    : ERROR:  could not connect to server "shard_us"
+DETAIL:  connection to server at "127.0.0.1", port 5443 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+== 5. and the fan-out view fails as a whole
+customers via view  : ERROR:  could not connect to server "shard_us"
+DETAIL:  connection to server at "127.0.0.1", port 5443 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+== 6. restart the shard
+US-routed orders    : 45961
+customers via view  : 50001

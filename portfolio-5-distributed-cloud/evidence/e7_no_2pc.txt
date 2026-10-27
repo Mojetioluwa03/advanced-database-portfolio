@@ -1,0 +1,10 @@
+== 1. a write that touches the US shard, then a prepare
+BEGIN
+UPDATE 0
+ERROR:  cannot PREPARE a transaction that has operated on postgres_fdw foreign tables
+
+== 2. the prepare did not exist, so there is nothing to roll back
+ERROR:  prepared transaction with identifier "p5_probe" does not exist
+
+== 3. the local half of the mechanism is off by default here
+max_prepared_transactions on the router: 0
